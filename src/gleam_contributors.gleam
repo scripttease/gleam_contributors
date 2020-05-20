@@ -12,8 +12,8 @@ pub fn hello_world() -> String {
 // api call to get first page
 
 // to see if there is a cursor in the data ie a next page or nothing
-pub type Sponsorspage {
-  Sponsorspage(endcursor: Result(String, Nil))
+pub type Sponsorspage { 
+  Sponsorspage(nextpage_cursor: Result(String, Nil))
 }
 
 // a result is like an option. error is string.
@@ -23,7 +23,19 @@ pub fn parse(sponsors: String) -> Result(Sponsorspage, String) {
   try user = dynamic.field(data, "user")
   try spons = dynamic.field(user, "sponsorshipsAsMaintainer")
   try page = dynamic.field(spons, "pageInfo")
-  try dynamic_cursor = dynamic.field(page, "endCursor")
-  try cursor = dynamic.string(dynamic_cursor)
-  Ok(Sponsorspage(endcursor: Ok(cursor)))
+
+  try dynamic_nextpage = dynamic.field(page, "hasNextPage")
+  try nextpage = dynamic.bool(dynamic_nextpage)
+
+  let cursor = case nextpage {
+    False -> Error(Nil)
+    True -> {
+      dynamic.field(page, "endCursor")
+      |> result.then(dynamic.string)
+      |> result.map_error(fn(_) { Nil })
+
+
+    }
+  }
+  Ok(Sponsorspage(nextpage_cursor: cursor))
 }

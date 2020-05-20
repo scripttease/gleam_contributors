@@ -7,6 +7,27 @@ pub fn hello_world_test() {
   |> should.equal("Hello, from gleam_contributors!")
 }
 
+pub fn parse_empty_with_cursor_test() {
+  let json = "
+ {
+  \"data\": {
+    \"user\": {
+      \"sponsorshipsAsMaintainer\": {
+        \"pageInfo\": {
+          \"hasNextPage\": false,
+          \"endCursor\": \"MjE\"
+        },
+        \"nodes\": [] }
+      }
+    }
+  }
+
+  "
+  gleam_contributors.parse(json)
+  |> should.equal(Ok(Sponsorspage(nextpage_cursor: Error(Nil))))
+}
+
+
 pub fn parse_test() {
   let json = "
  {
@@ -14,6 +35,7 @@ pub fn parse_test() {
     \"user\": {
       \"sponsorshipsAsMaintainer\": {
         \"pageInfo\": {
+          \"hasNextPage\": true,
           \"endCursor\": \"MjE\"
         },
         \"nodes\": [
@@ -192,5 +214,5 @@ pub fn parse_test() {
 } 
   "
   gleam_contributors.parse(json)
-  |> should.equal(Ok(Sponsorspage(endcursor: Ok("MjE"))))
+  |> should.equal(Ok(Sponsorspage(nextpage_cursor: Ok("MjE"))))
 }
