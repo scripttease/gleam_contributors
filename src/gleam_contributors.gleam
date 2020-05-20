@@ -13,7 +13,7 @@ pub type Sponsor {
   Sponsor(name: String)
 }
 
-pub fn decode_sponsor(json_obj: Dynamic) ->  Result(Sponsor, String) {
+pub fn decode_sponsor(json_obj: Dynamic) -> Result(Sponsor, String) {
   try entity = dynamic.field(json_obj, "sponsorEntity")
   try dynamic_name = dynamic.field(entity, "name")
   try name = dynamic.string(dynamic_name)
@@ -21,13 +21,14 @@ pub fn decode_sponsor(json_obj: Dynamic) ->  Result(Sponsor, String) {
   // try tier = dynamic.field(json_obj, "tier")
   Ok(Sponsor(name: name))
 }
-// api call to get first page
 
+// api call to get first page
 // to see if there is a cursor in the data ie a next page or nothing
-pub type Sponsorspage { 
-  Sponsorspage( nextpage_cursor: Result(String, Nil),
-                sponsor_list: List(Sponsor),
-                )
+pub type Sponsorspage {
+  Sponsorspage(
+    nextpage_cursor: Result(String, Nil),
+    sponsor_list: List(Sponsor),
+  )
 }
 
 // a result is like an option. error is string.
@@ -43,11 +44,9 @@ pub fn parse(sponsors_json: String) -> Result(Sponsorspage, String) {
 
   let cursor = case nextpage {
     False -> Error(Nil)
-    True -> {
-      dynamic.field(page, "endCursor")
+    True -> dynamic.field(page, "endCursor")
       |> result.then(dynamic.string)
       |> result.map_error(fn(_) { Nil })
-    }
   }
 
   try nodes = dynamic.field(spons, "nodes")
