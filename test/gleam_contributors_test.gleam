@@ -1,11 +1,6 @@
 import gleam_contributors.{Sponsorspage, Sponsor}
 import gleam/should
 
-pub fn hello_world_test() {
-  gleam_contributors.hello_world()
-  |> should.equal("Hello, from gleam_contributors!")
-}
-
 pub fn parse_empty_with_cursor_test() {
   let json = "
  {
@@ -43,7 +38,8 @@ pub fn parse_test() {
             \"sponsorEntity\": {
               \"name\": \"Chris Young\",
               \"avatarUrl\": \"https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4\",
-              \"websiteUrl\": null
+              \"websiteUrl\": null,
+              \"url\": \"https://github.com/worldofchris\"
             },
             \"tier\": {
               \"monthlyPriceInCents\": 500
@@ -53,7 +49,8 @@ pub fn parse_test() {
             \"sponsorEntity\": {
               \"name\": \"Bruno Michel\",
               \"avatarUrl\": \"https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4\",
-              \"websiteUrl\": \"http://blog.menfin.info/\"
+              \"websiteUrl\": \"http://blog.menfin.info/\",
+              \"url\": \"https://github.com/nono\"
             },
             \"tier\": {
               \"monthlyPriceInCents\": 500
@@ -71,8 +68,20 @@ pub fn parse_test() {
       Sponsorspage(
         nextpage_cursor: Ok("Mg"),
         sponsor_list: [
-          Sponsor(name: "Chris Young"),
-          Sponsor(name: "Bruno Michel"),
+          Sponsor(
+            name: "Chris Young",
+            avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+            github: "https://github.com/worldofchris",
+            website: Error(Nil),
+            cents: 500,
+          ),
+          Sponsor(
+            name: "Bruno Michel",
+            github: "https://github.com/nono",
+            avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+            website: Ok("http://blog.menfin.info/"),
+            cents: 500,
+          ),
         ],
       ),
     ),

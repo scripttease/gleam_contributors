@@ -2,24 +2,41 @@
 import gleam/result
 import gleam/dynamic.{Dynamic}
 
+// would be better to use try_decode but its a thruple...
 external fn decode_json_from_string(String) -> Dynamic =
   "jsone" "decode"
 
-pub fn hello_world() -> String {
-  "Hello, from gleam_contributors!"
-}
-
 pub type Sponsor {
-  Sponsor(name: String)
+  Sponsor(
+    name: String,
+    github: String,
+    avatar: String,
+    website: Result(String, Nil),
+    cents: Int,
+  )
 }
 
 pub fn decode_sponsor(json_obj: Dynamic) -> Result(Sponsor, String) {
   try entity = dynamic.field(json_obj, "sponsorEntity")
+
   try dynamic_name = dynamic.field(entity, "name")
   try name = dynamic.string(dynamic_name)
 
-  // try tier = dynamic.field(json_obj, "tier")
-  Ok(Sponsor(name: name))
+  try dynamic_avatar = dynamic.field(entity, "avatarUrl")
+  try avatar = dynamic.string(dynamic_avatar)
+
+  try dynamic_github = dynamic.field(entity, "url")
+  try github = dynamic.string(dynamic_github)
+
+  try dynamic_website = dynamic.field(entity, "websiteUrl")
+  let website = dynamic.string(dynamic_website)
+    |> result.map_error(fn(_) { Nil })
+
+  try tier = dynamic.field(json_obj, "tier")
+  try dynamic_cents = dynamic.field(tier, "monthlyPriceInCents")
+  try cents = dynamic.int(dynamic_cents)
+
+  Ok(Sponsor(name: name, github: github, avatar: avatar, website: website, cents: cents))
 }
 
 // api call to get first page
