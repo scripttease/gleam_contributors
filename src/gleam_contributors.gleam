@@ -73,4 +73,17 @@ pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
   Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
 }
 
+pub type Contributor {
+  Contributor(
+    name: String,
+    github: String,
+    // could include avatarURl and websiteUrl if required
+  )
+}
 
+pub type Contributorspage {
+  Contributorspage(
+    nextpage_cursor: Result(String, Nil),
+    contributor_list: List(Contributor),
+  )
+}

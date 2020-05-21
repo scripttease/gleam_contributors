@@ -105,6 +105,10 @@ query getCommits($org: String!, $repo: String!, $cursor: String, $previous_relea
           nodes {
             author {
               name
+              user {
+                login
+                url
+              }
             }
           }
         }
@@ -112,6 +116,7 @@ query getCommits($org: String!, $repo: String!, $cursor: String, $previous_relea
     }
   }
 }
+
 ```
 
 #### Variables
@@ -142,502 +147,902 @@ query getCommits($org: String!, $repo: String!, $cursor: String, $previous_relea
           "nodes": [
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Alice Dee"
+                "name": "Alice Dee",
+                "user": {
+                  "login": "scripttease",
+                  "url": "https://github.com/scripttease"
+                }
               }
             },
             {
               "author": {
-                "name": "Alice Dee"
+                "name": "Alice Dee",
+                "user": {
+                  "login": "scripttease",
+                  "url": "https://github.com/scripttease"
+                }
               }
             },
             {
               "author": {
-                "name": "Michael Borohovski"
+                "name": "Michael Borohovski",
+                "user": {
+                  "login": "borski",
+                  "url": "https://github.com/borski"
+                }
               }
             },
             {
               "author": {
-                "name": "Michael Borohovski"
+                "name": "Michael Borohovski",
+                "user": {
+                  "login": "borski",
+                  "url": "https://github.com/borski"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "kyle-sammons"
+                "name": "kyle-sammons",
+                "user": {
+                  "login": "kyle-sammons",
+                  "url": "https://github.com/kyle-sammons"
+                }
               }
             },
             {
               "author": {
-                "name": "kyle-sammons"
+                "name": "kyle-sammons",
+                "user": {
+                  "login": "kyle-sammons",
+                  "url": "https://github.com/kyle-sammons"
+                }
               }
             },
             {
               "author": {
-                "name": "Alice Dee"
+                "name": "Alice Dee",
+                "user": {
+                  "login": "scripttease",
+                  "url": "https://github.com/scripttease"
+                }
               }
             },
             {
               "author": {
-                "name": "Alice Dee"
+                "name": "Alice Dee",
+                "user": {
+                  "login": "scripttease",
+                  "url": "https://github.com/scripttease"
+                }
               }
             },
             {
               "author": {
-                "name": "Alice Dee"
+                "name": "Alice Dee",
+                "user": {
+                  "login": "scripttease",
+                  "url": "https://github.com/scripttease"
+                }
               }
             },
             {
               "author": {
-                "name": "Alice Dee"
+                "name": "Alice Dee",
+                "user": {
+                  "login": "scripttease",
+                  "url": "https://github.com/scripttease"
+                }
               }
             },
             {
               "author": {
-                "name": "Alice Dee"
+                "name": "Alice Dee",
+                "user": {
+                  "login": "scripttease",
+                  "url": "https://github.com/scripttease"
+                }
               }
             },
             {
               "author": {
-                "name": "Alice Dee"
+                "name": "Alice Dee",
+                "user": {
+                  "login": "scripttease",
+                  "url": "https://github.com/scripttease"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Alice Dee"
+                "name": "Alice Dee",
+                "user": {
+                  "login": "scripttease",
+                  "url": "https://github.com/scripttease"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Peter Saxton"
+                "name": "Peter Saxton",
+                "user": {
+                  "login": "CrowdHailer",
+                  "url": "https://github.com/CrowdHailer"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Quinn Wilton"
+                "name": "Quinn Wilton",
+                "user": {
+                  "login": "QuinnWilton",
+                  "url": "https://github.com/QuinnWilton"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Anthony Bullard"
+                "name": "Anthony Bullard",
+                "user": {
+                  "login": "gamebox",
+                  "url": "https://github.com/gamebox"
+                }
               }
             },
             {
               "author": {
-                "name": "Anthony Bullard"
+                "name": "Anthony Bullard",
+                "user": {
+                  "login": "gamebox",
+                  "url": "https://github.com/gamebox"
+                }
               }
             },
             {
               "author": {
-                "name": "Anthony Bullard"
+                "name": "Anthony Bullard",
+                "user": {
+                  "login": "gamebox",
+                  "url": "https://github.com/gamebox"
+                }
               }
             },
             {
               "author": {
-                "name": "Anthony Bullard"
+                "name": "Anthony Bullard",
+                "user": {
+                  "login": "gamebox",
+                  "url": "https://github.com/gamebox"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Tom Whatmore"
+                "name": "Tom Whatmore",
+                "user": {
+                  "login": "tomwhatmore",
+                  "url": "https://github.com/tomwhatmore"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Anthony Bullard"
+                "name": "Anthony Bullard",
+                "user": {
+                  "login": "gamebox",
+                  "url": "https://github.com/gamebox"
+                }
               }
             },
             {
               "author": {
-                "name": "Keith"
+                "name": "Keith",
+                "user": {
+                  "login": "ktec",
+                  "url": "https://github.com/ktec"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Louis Pilfold"
+                "name": "Louis Pilfold",
+                "user": {
+                  "login": "lpil",
+                  "url": "https://github.com/lpil"
+                }
               }
             },
             {
               "author": {
-                "name": "Anthony Bullard"
+                "name": "Anthony Bullard",
+                "user": {
+                  "login": "gamebox",
+                  "url": "https://github.com/gamebox"
+                }
               }
             },
             {
               "author": {
-                "name": "Anthony Bullard"
+                "name": "Anthony Bullard",
+                "user": {
+                  "login": "gamebox",
+                  "url": "https://github.com/gamebox"
+                }
               }
             },
             {
               "author": {
-                "name": "Anthony Bullard"
+                "name": "Anthony Bullard",
+                "user": {
+                  "login": "gamebox",
+                  "url": "https://github.com/gamebox"
+                }
               }
             }
           ]

@@ -17,13 +17,14 @@ rebar3 shell
 ```
 
 
-## Installation
+## Command-line tooling
 
-If [available in Hex](https://www.rebar3.org/docs/dependencies#section-declaring-dependencies)
-this package can be installed by adding `gleam_contributors` to your `rebar.config` dependencies:
+Use escriptize:
 
-```erlang
-{deps, [
-    gleam_contributors
-]}.
+```sh
+rebar3 escriptize
 ```
+
+This creates a file:
+
+`_build/default/bin/my_project_name` which requires a fn `main` as the entrypoint
