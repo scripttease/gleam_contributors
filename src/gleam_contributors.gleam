@@ -1,10 +1,89 @@
 // to add lib open rebar.config, add the deps
 import gleam/result
 import gleam/dynamic.{Dynamic}
+import gleam/httpc.{Text}
+import gleam/http.{Post}
+import gleam/map
+import gleam/string
+
+pub external type OkAtom
+
+pub external fn debug_print(anything) -> OkAtom =
+  "erlang" "display"
+
+pub external fn print(String) -> OkAtom =
+  "io" "fwrite"
+
+pub type Application {
+  GleamContributors
+}
+pub external fn start_application_and_deps(Application) -> OkAtom =
+  "application" "ensure_all_started"
+
+external fn encode_json(a) -> String =
+  "jsone" "encode"
+
+pub fn main(args: List(String)) {
+  debug_print(start_application_and_deps(GleamContributors))
+
+  let json = map.from_list([tuple("query", "{
+  user(login: \"lpil\") {
+    sponsorshipsAsMaintainer(after: \"Ng\", first: 2) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        sponsorEntity {
+          ... on User {
+            name
+            url
+            avatarUrl
+            websiteUrl
+          }
+          ... on Organization {
+            name
+            avatarUrl
+            websiteUrl
+          }
+        }
+        tier {
+          monthlyPriceInCents
+        }
+      }
+    }
+  }
+}")])
+
+
+  let token = case args {
+    [token] -> token
+    _ -> todo
+  }
+
+
+  let result = httpc.request(
+    method: Post,
+    url: "https://api.github.com/graphql",
+    headers: [tuple("Authorization", string.append("bearer ",token)), tuple("User-Agent", "gleam contributors")],
+    body: Text("application/json", encode_json(json)),
+  )
+
+  case result {
+    Ok(response) -> print(response.body)
+    Error(e) -> {
+      debug_print(e)
+      print("There was an error :(\n")
+    }
+  }
+
+  print("\n")
+}
 
 // would be better to use try_decode but its a thruple...
 external fn decode_json_from_string(String) -> Dynamic =
   "jsone" "decode"
+
 
 pub type Sponsor {
   Sponsor(
