@@ -16,6 +16,7 @@ pub type Sponsor {
   )
 }
 
+// Decode the Sponsor section of the JSON (List of hashmaps)
 pub fn decode_sponsor(json_obj: Dynamic) -> Result(Sponsor, String) {
   try entity = dynamic.field(json_obj, "sponsorEntity")
 
@@ -49,7 +50,7 @@ pub type Sponsorspage {
 }
 
 // a result is like an option. error is string.
-pub fn parse(sponsors_json: String) -> Result(Sponsorspage, String) {
+pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
   let res = decode_json_from_string(sponsors_json)
   try data = dynamic.field(res, "data")
   try user = dynamic.field(data, "user")
@@ -71,3 +72,5 @@ pub fn parse(sponsors_json: String) -> Result(Sponsorspage, String) {
 
   Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
 }
+
+

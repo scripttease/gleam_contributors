@@ -17,7 +17,7 @@ pub fn parse_empty_with_cursor_test() {
   }
 
   "
-  gleam_contributors.parse(json)
+  gleam_contributors.parse_sponsors(json)
   |> should.equal(
     Ok(Sponsorspage(nextpage_cursor: Error(Nil), sponsor_list: [])),
   )
@@ -62,7 +62,7 @@ pub fn parse_test() {
   }
 }
   "
-  gleam_contributors.parse(json)
+  gleam_contributors.parse_sponsors(json)
   |> should.equal(
     Ok(
       Sponsorspage(
