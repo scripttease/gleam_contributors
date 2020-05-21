@@ -27,7 +27,13 @@ rebar3 escriptize
 
 This creates an executable file:
 
-`_build/default/bin/my_project_name` which requires a fn `main` as the entrypoint This must be followed a space and then by your github api token, generated with the necessary permissions.
+`_build/default/bin/my_project_name` which requires a fn `main` as the entrypoint 
+
+To make the api request, follow the filename by your github api token, generated with the necessary permissions:
+
+```sh
+_build/default/bin/my_project_name my-api-token
+```
 
 The following must also be inculded in `deps` in `rebar.config`:
 
