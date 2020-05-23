@@ -47,6 +47,6 @@ The following must also be inculded in `deps` in `rebar.config`:
 
 The following must be included in the `applications` list in `my_project_name.app.src`:
 
-`gleam_httpc, ssl, inets`
+`gleam_httpc, ssl, inets, jsone`
 
 These erlang tools and the Application (named) need to be started in the entry point function `main` in order for the command line tooling to work with inets ssl etc.

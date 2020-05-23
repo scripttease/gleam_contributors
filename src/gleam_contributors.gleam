@@ -5,6 +5,7 @@ import gleam/httpc.{Text}
 import gleam/http.{Post}
 import gleam/map
 import gleam/string
+import gleam/list
 
 pub external type OkAtom
 
@@ -23,7 +24,8 @@ pub external fn start_application_and_deps(Application) -> OkAtom =
 external fn encode_json(a) -> String =
   "jsone" "encode"
 
-pub fn main(args: List(String)) {
+
+pub fn do_stuff(token, test_io) {
   debug_print(start_application_and_deps(GleamContributors))
 
   let json = map.from_list([tuple("query", "{
@@ -55,13 +57,6 @@ pub fn main(args: List(String)) {
   }
 }")])
 
-
-  let token = case args {
-    [token] -> token
-    _ -> todo
-  }
-
-
   let result = httpc.request(
     method: Post,
     url: "https://api.github.com/graphql",
@@ -77,7 +72,21 @@ pub fn main(args: List(String)) {
     }
   }
 
+  let rest_args = string.join(test_io, "\n")
+
   print("\n")
+  print(rest_args)
+  print("\n")
+}
+
+pub fn main(args: List(String)) {
+  case args {
+    [token, ..test_io] -> do_stuff(token, test_io)
+    _ -> {
+      print("Usage: _buildfilename $TOKEN $PARAM")
+      print("\n")
+    }
+  }
 }
 
 // would be better to use try_decode but its a thruple...
@@ -129,6 +138,7 @@ pub type Sponsorspage {
 }
 
 // a result is like an option. error is string.
+// todo put the parse_sponsors in main?
 pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
   let res = decode_json_from_string(sponsors_json)
   try data = dynamic.field(res, "data")
