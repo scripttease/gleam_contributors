@@ -1,6 +1,42 @@
 import gleam_contributors.{Sponsorspage, Sponsor}
 import gleam/should
 
+pub fn query_json_test() {
+  let cursor = "Ng"
+  let num_results = "2"
+  gleam_contributors.query_sponsors(cursor, num_results)
+  |>should.equal(
+    "{
+  user(login: \"lpil\") {
+    sponsorshipsAsMaintainer(after: \"Ng\", first: 2) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        sponsorEntity {
+          ... on User {
+            name
+            url
+            avatarUrl
+            websiteUrl
+          }
+          ... on Organization {
+            name
+            avatarUrl
+            websiteUrl
+          }
+        }
+        tier {
+          monthlyPriceInCents
+        }
+      }
+    }
+  }
+}"
+  )
+}
+
 pub fn parse_empty_with_cursor_test() {
   let json = "
  {

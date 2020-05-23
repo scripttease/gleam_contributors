@@ -6,6 +6,7 @@ import gleam/http.{Post}
 import gleam/map
 import gleam/string
 import gleam/list
+import gleam/int
 
 pub external type OkAtom
 
@@ -24,13 +25,14 @@ pub external fn start_application_and_deps(Application) -> OkAtom =
 external fn encode_json(a) -> String =
   "jsone" "encode"
 
+pub fn query_sponsors(cursor: String, num_results: String) -> String {
 
-pub fn do_stuff(token, test_io) {
-  debug_print(start_application_and_deps(GleamContributors))
+  // let num_results_string = int.to_string(num_results)
 
-  let json = map.from_list([tuple("query", "{
+  string.concat([
+"{
   user(login: \"lpil\") {
-    sponsorshipsAsMaintainer(after: \"Ng\", first: 2) {
+    sponsorshipsAsMaintainer(after: \"", cursor, "\", first: ", num_results, ") {
       pageInfo {
         hasNextPage
         endCursor
@@ -55,7 +57,45 @@ pub fn do_stuff(token, test_io) {
       }
     }
   }
-}")])
+}"
+  ])
+}
+
+pub fn do_stuff(token, cursor, num_results) {
+  debug_print(start_application_and_deps(GleamContributors))
+
+  let query = query_sponsors(cursor, num_results)
+
+  let json = map.from_list([tuple("query", query)]) 
+
+//   "{
+//   user(login: \"lpil\") {
+//     sponsorshipsAsMaintainer(after: \"Ng\", first: 2) {
+//       pageInfo {
+//         hasNextPage
+//         endCursor
+//       }
+//       nodes {
+//         sponsorEntity {
+//           ... on User {
+//             name
+//             url
+//             avatarUrl
+//             websiteUrl
+//           }
+//           ... on Organization {
+//             name
+//             avatarUrl
+//             websiteUrl
+//           }
+//         }
+//         tier {
+//           monthlyPriceInCents
+//         }
+//       }
+//     }
+//   }
+// }")])
 
   let result = httpc.request(
     method: Post,
@@ -72,18 +112,18 @@ pub fn do_stuff(token, test_io) {
     }
   }
 
-  let rest_args = string.join(test_io, "\n")
+  // let rest_args = string.join(test_io, "\n")
 
-  print("\n")
-  print(rest_args)
+  // print("\n")
+  // print(rest_args)
   print("\n")
 }
 
 pub fn main(args: List(String)) {
   case args {
-    [token, ..test_io] -> do_stuff(token, test_io)
+    [token, cursor, num_results] -> do_stuff(token, cursor, num_results)
     _ -> {
-      print("Usage: _buildfilename $TOKEN $PARAM")
+      print("Usage: _buildfilename $TOKEN $CURSOR $NUM")
       print("\n")
     }
   }
