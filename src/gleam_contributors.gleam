@@ -162,7 +162,12 @@ pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
 // takes API token, cursor and num_results from stdin (when it is called by fn `main`) and constructs a query, converts it to json and makes a POST request to the Github API.)
 //TODO seperate concerns so only calls API 
 // OkAtom is return value for print to stdout
-pub fn do_stuff(token: String, cursor: String, num_results: String) -> OkAtom {
+// TODO api_call needs to work for contribs query too. doesn't need to have query or cursor in command line these should  be added by the sponsorpage and another query made if required.
+// therefor the only USER required input should be the date of the previous release
+// other fns will need to be able to call it with other inputs thogh such as diff repo names and diff queries.
+// In fact the api call just needs the token in the command line. 
+// other fns may need diff args to construct their queries.
+pub fn api_call(token: String, cursor: String, num_results: String) -> OkAtom {
   debug_print(start_application_and_deps(GleamContributors))
 
   let query = query_sponsors(cursor, num_results)
@@ -207,14 +212,15 @@ pub fn parse_args(args: List(String)) -> Result(tuple(String, String, String), S
 
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
 // List(String) formed of whitespace seperated commands to stdin.
-// Top level, returns Resolt and handles error-handling
+// Top level, returns Result and handles error-handling
 pub fn main(args: List(String)) -> OkAtom {
   let result = {
     try tuple(token, cursor, num_results) = parse_args(args)
-    let stuff = do_stuff(token, cursor, num_results)
+    let stuff = api_call(token, cursor, num_results)
     Ok(stuff)
   }
-
+  
+  // Implement all fn calls here.
   // try json = get_sponsors_from_api(token, cursor)
   // try sponsorspage = parse_sponsors_api_body(json)
   case result {
