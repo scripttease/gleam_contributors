@@ -123,3 +123,131 @@ pub fn parse_test() {
     ),
   )
 }
+
+pub fn extract_sponsors_test() {
+  let page = Sponsorspage(
+    nextpage_cursor: Ok("Mg"),
+    sponsor_list: [
+      Sponsor(
+        name: "Chris Young",
+        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+        github: "https://github.com/worldofchris",
+        website: Error(Nil),
+        cents: 500,
+      ),
+      Sponsor(
+        name: "Bruno Michel",
+        github: "https://github.com/nono",
+        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+        website: Ok("http://blog.menfin.info/"),
+        cents: 500,
+      ),
+    ],
+  )
+  gleam_contributors.extract_sponsors(page)
+  |> should.equal(
+    [
+      "[Bruno Michel](https://github.com/nono)",
+      "[Chris Young](https://github.com/worldofchris)" 
+    ],
+  )
+}
+
+
+pub fn extract_sponsors_500c_test() {
+  let page = Sponsorspage(
+    nextpage_cursor: Ok("Mg"),
+    sponsor_list: [
+      Sponsor(
+        name: "Chris Young",
+        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+        github: "https://github.com/worldofchris",
+        website: Error(Nil),
+        cents: 5000,
+      ),
+      Sponsor(
+        name: "Bruno Michel",
+        github: "https://github.com/nono",
+        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+        website: Ok("http://blog.menfin.info/"),
+        cents: 500,
+      ),
+    ],
+  )
+  gleam_contributors.extract_sponsors_500c(page)
+  |> should.equal(
+    [
+      "[Bruno Michel](https://github.com/nono)",
+    ],
+  )
+}
+
+pub fn extract_sponsors_none_500c_test() {
+  let page = Sponsorspage(
+    nextpage_cursor: Ok("Mg"),
+    sponsor_list: [
+      Sponsor(
+        name: "Chris Young",
+        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+        github: "https://github.com/worldofchris",
+        website: Error(Nil),
+        cents: 5000,
+      ),
+      Sponsor(
+        name: "Bruno Michel",
+        github: "https://github.com/nono",
+        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+        website: Ok("http://blog.menfin.info/"),
+        cents: 2000,
+      ),
+    ],
+  )
+  gleam_contributors.extract_sponsors_500c(page)
+  |> should.equal(
+    [],
+  )
+}
+
+pub fn extract_sponsors_many_unordered_500c() {
+  let page = Sponsorspage(
+    nextpage_cursor: Ok("Mg"),
+    sponsor_list: [
+      Sponsor(
+        name: "Chris Young",
+        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+        github: "https://github.com/worldofchris",
+        website: Error(Nil),
+        cents: 500,
+      ),
+      Sponsor(
+        name: "Bruno Michel",
+        github: "https://github.com/nono",
+        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+        website: Ok("http://blog.menfin.info/"),
+        cents: 2000,
+      ),
+      Sponsor(
+        name: "Scripttease",
+        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+        github: "https://github.com/scripttease",
+        website: Error(Nil),
+        cents: 500,
+      ),
+      Sponsor(
+        name: "Jose Valim",
+        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+        github: "https://github.com/josevalim",
+        website: Error(Nil),
+        cents: 500,
+      ),
+    ],
+  )
+  gleam_contributors.extract_sponsors_500c(page)
+  |> should.equal(
+    [
+      "[Chris Young](https://github.com/worldofchris)",
+      "[Jose Valim](https://github.com/josevalim)",
+      "[Scripttease](https://github.com/scripttease)",
+    ],
+  )
+}

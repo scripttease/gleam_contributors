@@ -160,7 +160,9 @@ pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
 
 //TODO rename this
 // takes API token, cursor and num_results from stdin (when it is called by fn `main`) and constructs a query, converts it to json and makes a POST request to the Github API.)
-pub fn do_stuff(token, cursor, num_results) {
+//TODO seperate concerns so only calls API 
+// OkAtom is return value for print to stdout
+pub fn do_stuff(token: String, cursor: String, num_results: String) -> OkAtom {
   debug_print(start_application_and_deps(GleamContributors))
 
   let query = query_sponsors(cursor, num_results)
@@ -194,13 +196,31 @@ pub fn do_stuff(token, cursor, num_results) {
   print("\n")
 }
 
+pub fn parse_args(args: List(String)) -> Result(tuple(String, String, String), String) {
+  case args {
+    [token, cursor, num_results] ->  {
+      Ok(tuple(token, cursor, num_results))
+    }
+    _ -> Error("Usage: _buildfilename $TOKEN $CURSOR $NUM")
+  }
+}
+
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
 // List(String) formed of whitespace seperated commands to stdin.
-pub fn main(args: List(String)) {
-  case args {
-    [token, cursor, num_results] -> do_stuff(token, cursor, num_results)
-    _ -> {
-      print("Usage: _buildfilename $TOKEN $CURSOR $NUM")
+// Top level, returns Resolt and handles error-handling
+pub fn main(args: List(String)) -> OkAtom {
+  let result = {
+    try tuple(token, cursor, num_results) = parse_args(args)
+    let stuff = do_stuff(token, cursor, num_results)
+    Ok(stuff)
+  }
+
+  // try json = get_sponsors_from_api(token, cursor)
+  // try sponsorspage = parse_sponsors_api_body(json)
+  case result {
+    Ok(_) -> print("Done!\n")
+    Error(e) -> {
+      print(e)
       print("\n")
     }
   }
@@ -208,6 +228,26 @@ pub fn main(args: List(String)) {
 
 //TODO fn that maps over sponsor_list and extracts into a sortable datatype, then sorts then converst to string (or iodata?) the relevant info.
 // something like map.sponsor_list ( list.append(sponsor.name) )
+//ideally takes a List(Sponsors) and returns a List(String), that is sorted, then a string?
+pub fn extract_sponsors(page: Sponsorspage) -> List(String) {
+  list.map(page.sponsor_list, fn(sponsor: Sponsor) {
+    string.concat(["[",sponsor.name, "]", "(", sponsor.github,")"])
+  })
+  |> list.sort(string.compare)
+}
+
+pub fn extract_sponsors_500c(page: Sponsorspage) -> List(String) {
+
+  let upto_500_list = list.filter(page.sponsor_list, fn(sponsor: Sponsor) {
+    sponsor.cents <= 500
+  })
+
+  list.map(upto_500_list, fn(sponsor: Sponsor) {
+    string.concat(["[",sponsor.name, "]", "(", sponsor.github,")"])
+  })
+  |> list.sort(string.compare)
+}
+
 pub type Contributor {
   Contributor(name: String, github: String)
 }
