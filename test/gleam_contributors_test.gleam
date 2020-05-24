@@ -5,7 +5,7 @@ pub fn query_json_test() {
   let cursor = "Ng"
   let num_results = "2"
   gleam_contributors.query_sponsors(cursor, num_results)
-  |>should.equal(
+  |> should.equal(
     "{
   user(login: \"lpil\") {
     sponsorshipsAsMaintainer(after: \"Ng\", first: 2) {
@@ -33,7 +33,7 @@ pub fn query_json_test() {
       }
     }
   }
-}"
+}",
   )
 }
 
