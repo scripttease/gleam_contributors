@@ -1,7 +1,8 @@
 import gleam_contributors.{Sponsorspage, Sponsor}
+import gleam/option.{Option}
 import gleam/should
 
-pub fn query_json_test() {
+pub fn query_sponsors_test() {
   let cursor = "Ng"
   let num_results = "2"
   gleam_contributors.query_sponsors(cursor, num_results)
@@ -148,11 +149,10 @@ pub fn extract_sponsors_test() {
   |> should.equal(
     [
       "[Bruno Michel](https://github.com/nono)",
-      "[Chris Young](https://github.com/worldofchris)" 
+      "[Chris Young](https://github.com/worldofchris)",
     ],
   )
 }
-
 
 pub fn extract_sponsors_500c_test() {
   let page = Sponsorspage(
@@ -175,11 +175,7 @@ pub fn extract_sponsors_500c_test() {
     ],
   )
   gleam_contributors.extract_sponsors_500c(page)
-  |> should.equal(
-    [
-      "[Bruno Michel](https://github.com/nono)",
-    ],
-  )
+  |> should.equal(["[Bruno Michel](https://github.com/nono)"])
 }
 
 pub fn extract_sponsors_none_500c_test() {
@@ -203,9 +199,7 @@ pub fn extract_sponsors_none_500c_test() {
     ],
   )
   gleam_contributors.extract_sponsors_500c(page)
-  |> should.equal(
-    [],
-  )
+  |> should.equal([])
 }
 
 pub fn extract_sponsors_many_unordered_500c() {
@@ -249,5 +243,116 @@ pub fn extract_sponsors_many_unordered_500c() {
       "[Jose Valim](https://github.com/josevalim)",
       "[Scripttease](https://github.com/scripttease)",
     ],
+  )
+}
+
+pub fn construct_sponsor_query_test() {
+  let cursor = option.Some("Ng")
+  let num_results = option.Some("2")
+
+  gleam_contributors.construct_sponsor_query(cursor, num_results)
+  |> should.equal(
+    "{
+  user(login: \"lpil\") {
+    sponsorshipsAsMaintainer(after: \"Ng\", first: 2) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        sponsorEntity {
+          ... on User {
+            name
+            url
+            avatarUrl
+            websiteUrl
+          }
+          ... on Organization {
+            name
+            avatarUrl
+            websiteUrl
+          }
+        }
+        tier {
+          monthlyPriceInCents
+        }
+      }
+    }
+  }
+}",
+  )
+}
+
+pub fn construct_sponsor_query_nocursor_test() {
+  let cursor = option.None
+  let num_results = option.Some("2")
+
+  gleam_contributors.construct_sponsor_query(cursor, num_results)
+  |> should.equal(
+    "{
+  user(login: \"lpil\") {
+    sponsorshipsAsMaintainer(after: null, first: 2) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        sponsorEntity {
+          ... on User {
+            name
+            url
+            avatarUrl
+            websiteUrl
+          }
+          ... on Organization {
+            name
+            avatarUrl
+            websiteUrl
+          }
+        }
+        tier {
+          monthlyPriceInCents
+        }
+      }
+    }
+  }
+}",
+  )
+}
+
+pub fn construct_sponsor_query_nonum_result_test() {
+  let cursor = option.None
+  let num_results = option.None
+
+  gleam_contributors.construct_sponsor_query(cursor, num_results)
+  |> should.equal(
+    "{
+  user(login: \"lpil\") {
+    sponsorshipsAsMaintainer(after: null, first: 100) {
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+      nodes {
+        sponsorEntity {
+          ... on User {
+            name
+            url
+            avatarUrl
+            websiteUrl
+          }
+          ... on Organization {
+            name
+            avatarUrl
+            websiteUrl
+          }
+        }
+        tier {
+          monthlyPriceInCents
+        }
+      }
+    }
+  }
+}",
   )
 }
