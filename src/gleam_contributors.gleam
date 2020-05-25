@@ -406,8 +406,35 @@ pub fn construct_contributor_query(
   )
 }
 
-pub fn parse_contributors(response_json) {
+pub fn decode_contributor(json_obj: Dynamic) -> Result(Contributor, String) {
   todo
+}
+
+pub fn parse_contributors(response_json: String) -> Result(Contributorspage, String) {
+  let res = decode_json_from_string(response_json)
+  try data = dynamic.field(res, "data")
+  try repo = dynamic.field(data, "repository")
+  try object = dynamic.field(repo, "object")
+  try history = dynamic.field(object, "history")
+  try pageinfo = dynamic.field(history, "pageInfo")
+
+  try dynamic_nextpage = dynamic.field(pageinfo, "hasNextPage")
+  try nextpage = dynamic.bool(dynamic_nextpage)
+
+  let cursor = case nextpage {
+    False -> Error(Nil)
+    True -> { 
+      dynamic.field(pageinfo, "endCursor")
+      |> result.then(dynamic.string)
+      |> result.map_error(fn(_) { Nil })
+    }
+  }
+
+  try nodes = dynamic.field(history, "nodes")
+  // make fn decode_contributor
+  try contributors = dynamic.list(nodes, decode_contributor)
+
+  Ok(Contributorspage(nextpage_cursor: cursor, contributor_list: contributors))
 }
 
 pub fn extract_contributors(page: Contributorspage) -> List(String) {
