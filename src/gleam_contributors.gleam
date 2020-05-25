@@ -37,52 +37,11 @@ pub type Sponsor {
   )
 }
 
-// TODO logic for api call to get first page then next...
 // Type required to see if there is a cursor in the data and a next page. If so, another API request is required
 pub type Sponsorspage {
   Sponsorspage(
     nextpage_cursor: Result(String, Nil),
     sponsor_list: List(Sponsor),
-  )
-}
-
-//concatenates query params into query
-pub fn query_sponsors(cursor: String, num_results: String) -> String {
-  string.concat(
-    [
-      "{
-  user(login: \"lpil\") {
-    sponsorshipsAsMaintainer(after: \"",
-      cursor,
-      "\", first: ",
-      num_results,
-      ") {
-      pageInfo {
-        hasNextPage
-        endCursor
-      }
-      nodes {
-        sponsorEntity {
-          ... on User {
-            name
-            url
-            avatarUrl
-            websiteUrl
-          }
-          ... on Organization {
-            name
-            avatarUrl
-            websiteUrl
-          }
-        }
-        tier {
-          monthlyPriceInCents
-        }
-      }
-    }
-  }
-}",
-    ],
   )
 }
 
@@ -139,9 +98,7 @@ pub fn construct_sponsor_query(
   )
 }
 
-//TODO fn that maps over sponsor_list and extracts into a sortable datatype, then sorts then converst to string (or iodata?) the relevant info.
-// something like map.sponsor_list ( list.append(sponsor.name) )
-//ideally takes a List(Sponsors) and returns a List(String), that is sorted, then a string?
+
 pub fn extract_sponsors(page: Sponsorspage) -> List(String) {
   list.map(
     page.sponsor_list,
@@ -265,9 +222,13 @@ pub fn call_api_for_sponsors(
   cursor: Option(String),
   sponsor_list_md: List(String),
 ) -> Result(List(String), String) {
+
   let query = construct_sponsor_query(cursor, option.None)
+
   try response_json = call_api(token, query)
   try sponsorpage = parse_sponsors(response_json)
+
+  // the extract sponsors fn should be taking a sponsor_list not sponsorpage? Is this overwriting?
   let sponsor_list_md = list.append(
     sponsor_list_md,
     extract_sponsors(sponsorpage),
@@ -282,49 +243,7 @@ pub fn call_api_for_sponsors(
   }
 }
 
-//TODO rename this
-// takes API token, cursor and num_results from stdin (when it is called by fn `main`) and constructs a query, converts it to json and makes a POST request to the Github API.)
-//TODO seperate concerns so only calls API 
-// OkAtom is return value for print to stdout
-// TODO Do_stuff needs to work for contribs query too. doesn't need to have query or cursor in command line these should  be added by the sponsorpage and another query made if required.
-// therefor the only USER required input should be the date of the previous release
-// other fns will need to be able to call it with other inputs thogh such as diff repo names and diff queries.
-// In fact the api call just needs the token in the command line. 
-// other fns may need diff args to construct their queries.
-pub fn do_stuff(token: String, cursor: String, num_results: String) -> Nil {
-  io.debug(start_application_and_deps(GleamContributors))
-
-  let query = query_sponsors(cursor, num_results)
-
-  let json = map.from_list([tuple("query", query)])
-
-  let result = httpc.request(
-    method: Post,
-    url: "https://api.github.com/graphql",
-    headers: [
-      tuple("Authorization", string.append("bearer ", token)),
-      tuple("User-Agent", "gleam contributors"),
-    ],
-    body: Text("application/json", encode_json(json)),
-  )
-
-  // let sponsor_list = parse_sponsors(result.body)
-  // Prints response or error to stdout
-  case result {
-    // Ok(response) -> print(parse_sponsors(response.body))
-    // Ok(response) -> print(sponsor_list)
-    // TODO create fn to turn parse_sponsors(result.body) into a string so can print to stdout. Order by 5, 10, 20, 50+
-    // TODO combine the sponsors with contributors add that to the string to print out. Sort alphabetically.
-    Ok(response) -> io.println(response.body)
-    Error(e) -> {
-      io.debug(e)
-      io.println("There was an error during the POST request :(")
-    }
-  }
-
-  io.print("\n")
-}
-
+// handles command line stdin
 pub fn parse_args(
   args: List(String),
 ) -> Result(tuple(String, String, String), String) {
@@ -336,7 +255,7 @@ pub fn parse_args(
 
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
 // List(String) formed of whitespace seperated commands to stdin.
-// Top level, returns Result and handles error-handling
+// Top level, handles error-handling
 pub fn main(args: List(String)) -> Nil {
   let result = {
     try tuple(token, _cursor, _num_results) = parse_args(args)
