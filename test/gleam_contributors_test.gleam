@@ -320,3 +320,44 @@ pub fn construct_sponsor_query_nonum_result_test() {
 }",
   )
 }
+
+pub fn construct_release_query_test() {
+  let version = option.Some("v0.8.0")
+
+  gleam_contributors.construct_release_query(version)
+  |> should.equal(
+    "{
+  repository(name: \"gleam\", owner: \"gleam-lang\") {
+    release(tagName: \"v0.8.0\") {
+      tag {
+        target {
+          ... on Commit {
+            committedDate
+          }
+        }
+      }
+    }
+  }
+}",
+  )
+}
+
+pub fn parse_datetime_test() {
+  let json = "
+{
+  \"data\": {
+    \"repository\": {
+      \"release\": {
+        \"tag\": {
+          \"target\": {
+            \"committedDate\": \"2020-05-19T16:09:23Z\"
+          }
+        }
+      }
+    }
+  }
+}
+  "
+  gleam_contributors.parse_datetime(json)
+  |> should.equal(Ok("2020-05-19T16:09:23Z"))
+}

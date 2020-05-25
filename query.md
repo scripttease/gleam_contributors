@@ -92,7 +92,7 @@ The output needs to be parsed for multiple names.
 You have to do a request for each repo (eg gleam, stdlib, in both orgs (gleam-lang and gleam-experiments)
 
 ```graphql
-query getCommits($org: String!, $repo: String!, $cursor: String, $previous_release_time: GitTimestamp!, $next_release_time: GitTimestamp) {
+query getCommits($org: String!, $repo: String!, $cursor: String, $previous_release_time: GitTimestamp, $next_release_time: GitTimestamp) {
   repository(owner: $org, name: $repo) {
     object(expression: "master") {
       ... on Commit {
@@ -125,6 +125,7 @@ query getCommits($org: String!, $repo: String!, $cursor: String, $previous_relea
 {
   "org": "gleam-lang",
   "repo": "gleam",
+  // note this can now also be null, then all contributors.
   "previous_release_time": "2010-01-20T10:05:45-06:00",
   "next_release_time": null,
   "cursor": null
@@ -1052,3 +1053,48 @@ query getCommits($org: String!, $repo: String!, $cursor: String, $previous_relea
   }
 }
 ```
+
+## For Release Datetime query
+
+```graphql
+query releasedate($version: String!) {
+  repository(name: "gleam", owner: "gleam-lang") {
+    release(tagName: $version) {
+      tag {
+        target {
+          ... on Commit {
+            committedDate
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+#### Variables
+
+```graphql
+{
+  "version": "v0.8.1"
+}
+```
+
+#### Results
+
+```json
+{
+  "data": {
+    "repository": {
+      "release": {
+        "tag": {
+          "target": {
+            "committedDate": "2020-05-19T16:09:23Z"
+          }
+        }
+      }
+    }
+  }
+}
+```
+

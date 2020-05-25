@@ -98,7 +98,6 @@ pub fn construct_sponsor_query(
   )
 }
 
-
 pub fn extract_sponsors(page: Sponsorspage) -> List(String) {
   list.map(
     page.sponsor_list,
@@ -222,7 +221,6 @@ pub fn call_api_for_sponsors(
   cursor: Option(String),
   sponsor_list_md: List(String),
 ) -> Result(List(String), String) {
-
   let query = construct_sponsor_query(cursor, option.None)
 
   try response_json = call_api(token, query)
@@ -248,8 +246,14 @@ pub fn parse_args(
   args: List(String),
 ) -> Result(tuple(String, String, String), String) {
   case args {
-    [token, cursor, num_results] -> Ok(tuple(token, cursor, num_results))
-    _ -> Error("Usage: _buildfilename $TOKEN $CURSOR $NUM")
+    [
+      token,
+      from_version,
+      to_version,
+    ] -> Ok(tuple(token, from_version, to_version))
+    _ -> Error(
+      "Usage: _buildfilename $TOKEN $FROM_VESRION $TO_VESRION \n version in format v0.3.0",
+    )
   }
 }
 
@@ -257,19 +261,16 @@ pub fn parse_args(
 // List(String) formed of whitespace seperated commands to stdin.
 // Top level, handles error-handling
 pub fn main(args: List(String)) -> Nil {
+  // try returns early so they have to be in a let block as this fn returns Nil.
   let result = {
-    try tuple(token, _cursor, _num_results) = parse_args(args)
-    // let stuff = do_stuff(token, cursor, num_results)
-    // Ok(stuff)
-    try stuff = call_api_for_sponsors(token, option.None, [])
-    Ok(stuff)
+    try tuple(token, from_version, to_version) = parse_args(args)
+    try sponsors = call_api_for_sponsors(token, option.None, [])
+    Ok(sponsors)
   }
-  // Implement all fn calls here.
-  // try json = get_sponsors_from_api(token, cursor)
-  // try sponsorspage = parse_sponsors_api_body(json)
+
   case result {
-    Ok(stuff) -> {
-      io.debug(stuff)
+    Ok(sponsors) -> {
+      io.debug(sponsors)
       io.println("Done!")
     }
     Error(e) -> io.println(e)
@@ -286,4 +287,162 @@ pub type Contributorspage {
     nextpage_cursor: Result(String, Nil),
     contributor_list: List(Contributor),
   )
+}
+
+// Can this actually be null here?
+pub fn construct_release_query(version: Option(String)) -> String {
+  let use_version = case version {
+    option.Some(version) -> string.concat(["\"", version, "\""])
+    _ -> "null"
+  }
+
+  string.concat(
+    [
+      "{
+  repository(name: \"gleam\", owner: \"gleam-lang\") {
+    release(tagName: ",
+      use_version,
+      ") {
+      tag {
+        target {
+          ... on Commit {
+            committedDate
+          }
+        }
+      }
+    }
+  }
+}",
+    ],
+  )
+}
+
+pub fn parse_datetime(json: String) -> Result(String, String) {
+  let res = decode_json_from_string(json)
+  try data = dynamic.field(res, "data")
+  try repo = dynamic.field(data, "repository")
+  try release = dynamic.field(repo, "release")
+  try tag = dynamic.field(release, "tag")
+  try target = dynamic.field(tag, "target")
+  try dynamic_date = dynamic.field(target, "committedDate")
+  try date = dynamic.string(dynamic_date)
+
+  Ok(date)
+}
+
+// For this query to get datetimes they CANNOT be null in the API call
+pub fn api_release_datetimes(
+  token: String,
+  from_version: Option(String),
+  to_version: Option(String),
+) -> Result(tuple(String, String), String) {
+  let query_from = construct_release_query(from_version)
+  let query_to = construct_release_query(to_version)
+
+  try response_json = call_api(token, query_from)
+  try from_datetime = parse_datetime(response_json)
+
+  try response_json = call_api(token, query_to)
+  try to_datetime = parse_datetime(response_json)
+
+  Ok(tuple(from_datetime, to_datetime))
+}
+
+//TODO org gleam-experiments!!!
+//TODO from_version and to_v.. should be from_datetime...
+pub fn construct_contributor_query(
+  cursor: Option(String),
+  from_version: Option(String),
+  to_version: Option(String),
+) -> String {
+  let use_cursor = case cursor {
+    option.Some(cursor) -> string.concat(["\"", cursor, "\""])
+    _ -> "null"
+  }
+
+  let use_from_version = case from_version {
+    option.Some(from_version) -> string.concat(["\"", from_version, "\""])
+    _ -> "null"
+  }
+
+  let use_to_version = case to_version {
+    option.Some(to_version) -> string.concat(["\"", to_version, "\""])
+    _ -> "null"
+  }
+
+  string.concat(
+    [
+      "{
+  repository(owner: \"gleam-lang\" name: \"gleam\") {
+    object(expression: \"master\") {
+      ... on Commit {
+        history(since: ",
+      use_from_version,
+      ", until: ",
+      use_to_version,
+      ", after: ",
+      use_cursor,
+      ") {
+          totalCount
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          nodes {
+            author {
+              name
+              user {
+                login
+                url
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}",
+    ]
+  )
+}
+
+pub fn parse_contributors(response_json) {
+  todo
+}
+
+pub fn extract_contributors(page: Contributorspage) -> List(String) {
+  todo
+}
+
+pub fn call_api_for_contributors(
+  token: String,
+  from_version: Option(String),
+  to_version: Option(String),
+  cursor: Option(String),
+  contributor_list_md: List(String),
+) -> Result(List(String), String) {
+  //todo make this construct fn
+  let query = construct_contributor_query(cursor, from_version, to_version)
+  try response_json = call_api(token, query)
+  //todo make this parse fn
+  try contributorpage = parse_contributors(response_json)
+  //todo write extract fn
+  let contributor_list_md = list.append(
+    contributor_list_md,
+    extract_contributors(contributorpage),
+  )
+
+  case contributorpage.nextpage_cursor {
+    Ok(cursor) -> {
+      let cursor_opt = option.Some(cursor)
+      call_api_for_contributors(
+        token,
+        from_version,
+        to_version,
+        cursor_opt,
+        contributor_list_md,
+      )
+    }
+    _ -> Ok(contributor_list_md)
+  }
 }
