@@ -1,8 +1,10 @@
 import gleam_contributors.{Sponsorspage, Sponsor}
+import gleam_contributors.{Contributorspage, Contributor}
 import gleam/option.{Option}
 import gleam/should
+import gleam/set.{Set}
 
-pub fn parse_empty_with_cursor_test() {
+pub fn parse_sponsor_empty_with_cursor_test() {
   let json = "
  {
   \"data\": {
@@ -24,7 +26,7 @@ pub fn parse_empty_with_cursor_test() {
   )
 }
 
-pub fn parse_test() {
+pub fn parse_sponsor_test() {
   let json = "
 {
   \"data\": {
@@ -360,4 +362,194 @@ pub fn parse_datetime_test() {
   "
   gleam_contributors.parse_datetime(json)
   |> should.equal(Ok("2020-05-19T16:09:23Z"))
+}
+
+pub fn construct_contributor_query_test() {
+  let cursor = option.None
+  let from_version = option.Some("2020-03-01T19:22:35Z")
+  let to_version = option.Some("2020-05-07T18:57:47Z")
+  let count = option.Some("5")
+
+  gleam_contributors.construct_contributor_query(
+    cursor,
+    from_version,
+    to_version,
+    count,
+  )
+  |> should.equal(
+    "{
+  repository(owner: \"gleam-lang\", name: \"gleam\") {
+    object(expression: \"master\") {
+      ... on Commit {
+        history(since: \"2020-03-01T19:22:35Z\", until: \"2020-05-07T18:57:47Z\", after: null, first: 5) {
+          totalCount
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          nodes {
+            author {
+              name
+              user {
+                login
+                url
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}",
+  )
+}
+
+pub fn parse_contributors_empty_with_cursor_test() {
+  let json = "
+  {
+  \"data\": {
+    \"repository\": {
+      \"object\": {
+        \"history\": {
+          \"totalCount\": 0,
+          \"pageInfo\": {
+            \"hasNextPage\": false,
+            \"endCursor\": null
+          },
+          \"nodes\": []
+        }
+      }
+    }
+  }
+}
+  "
+  gleam_contributors.parse_contributors(json)
+  |> should.equal(
+    Ok(Contributorspage(nextpage_cursor: Error(Nil), contributor_list: [])),
+  )
+}
+
+// TODO change previous to latest or current
+pub fn parse_contributors_test() {
+  let json = "
+{
+  \"data\": {
+    \"repository\": {
+      \"object\": {
+        \"history\": {
+          \"totalCount\": 1285,
+          \"pageInfo\": {
+            \"hasNextPage\": true,
+            \"endCursor\": \"3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4\"
+          },
+          \"nodes\": [
+            {
+              \"author\": {
+                \"name\": \"Louis Pilfold\",
+                \"user\": {
+                  \"login\": \"lpil\",
+                  \"url\": \"https://github.com/lpil\"
+                }
+              }
+            },
+            {
+              \"author\": {
+                \"name\": \"Tom Whatmore\",
+                \"user\": {
+                  \"login\": \"tomwhatmore\",
+                  \"url\": \"https://github.com/tomwhatmore\"
+                }
+              }
+            },
+            {
+              \"author\": {
+                \"name\": \"Louis Pilfold\",
+                \"user\": {
+                  \"login\": \"lpil\",
+                  \"url\": \"https://github.com/lpil\"
+                }
+              }
+            },
+            {
+              \"author\": {
+                \"name\": \"Louis Pilfold\",
+                \"user\": {
+                  \"login\": \"lpil\",
+                  \"url\": \"https://github.com/lpil\"
+                }
+              }
+            },
+            {
+              \"author\": {
+                \"name\": \"Quinn Wilton\",
+                \"user\": {
+                  \"login\": \"QuinnWilton\",
+                  \"url\": \"https://github.com/QuinnWilton\"
+                }
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+  "
+
+  gleam_contributors.parse_contributors(json)
+  |> should.equal(
+    Ok(
+      Contributorspage(
+        nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
+        contributor_list: [
+          Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
+          Contributor(
+            name: "Tom Whatmore",
+            github: "https://github.com/tomwhatmore",
+          ),
+          Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
+          Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
+          Contributor(
+            name: "Quinn Wilton",
+            github: "https://github.com/QuinnWilton",
+          ),
+        ],
+      ),
+    ),
+  )
+}
+
+pub fn remove_duplicates_test() {
+  let slist = ["a", "a", "b", "c", "c"]
+
+  gleam_contributors.remove_duplicates(slist)
+  |> should.equal(set.from_list(["a", "b", "c"]))
+}
+
+pub fn extract_contributors_test() {
+  let page = Contributorspage(
+    nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
+    contributor_list: [
+      Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
+      Contributor(
+        name: "Tom Whatmore",
+        github: "https://github.com/tomwhatmore",
+      ),
+      Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
+      Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
+      Contributor(
+        name: "Quinn Wilton",
+        github: "https://github.com/QuinnWilton",
+      ),
+    ],
+  )
+
+  gleam_contributors.extract_contributors(page)
+  |> should.equal(
+    [
+      "[Louis Pilfold](https://github.com/lpil)",
+      "[Quinn Wilton](https://github.com/QuinnWilton)",
+      "[Tom Whatmore](https://github.com/tomwhatmore)",
+    ],
+  )
 }

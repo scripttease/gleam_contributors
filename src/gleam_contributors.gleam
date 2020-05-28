@@ -5,6 +5,7 @@ import gleam/httpc.{Text, Response}
 import gleam/http.{Post}
 import gleam/map
 import gleam/string
+import gleam/set.{Set}
 import gleam/list
 import gleam/int
 import gleam/io
@@ -350,38 +351,48 @@ pub fn api_release_datetimes(
 
 //TODO org gleam-experiments!!!
 //TODO from_version and to_v.. should be from_datetime...
+//TODO so this needs to call the api...
 pub fn construct_contributor_query(
   cursor: Option(String),
-  from_version: Option(String),
-  to_version: Option(String),
+  from_date: Option(String),
+  to_date: Option(String),
+  count: Option(String),
 ) -> String {
+  // of use in tests, otherwise 100 results
   let use_cursor = case cursor {
     option.Some(cursor) -> string.concat(["\"", cursor, "\""])
     _ -> "null"
   }
 
-  let use_from_version = case from_version {
-    option.Some(from_version) -> string.concat(["\"", from_version, "\""])
+  let use_from_date = case from_date {
+    option.Some(from_date) -> string.concat(["\"", from_date, "\""])
     _ -> "null"
   }
 
-  let use_to_version = case to_version {
-    option.Some(to_version) -> string.concat(["\"", to_version, "\""])
+  let use_to_date = case to_date {
+    option.Some(to_date) -> string.concat(["\"", to_date, "\""])
     _ -> "null"
+  }
+
+  let use_count = case count {
+    option.Some(count) -> count
+    _ -> "100"
   }
 
   string.concat(
     [
       "{
-  repository(owner: \"gleam-lang\" name: \"gleam\") {
+  repository(owner: \"gleam-lang\", name: \"gleam\") {
     object(expression: \"master\") {
       ... on Commit {
         history(since: ",
-      use_from_version,
+      use_from_date,
       ", until: ",
-      use_to_version,
+      use_to_date,
       ", after: ",
       use_cursor,
+      ", first: ",
+      use_count,
       ") {
           totalCount
           pageInfo {
@@ -402,15 +413,25 @@ pub fn construct_contributor_query(
     }
   }
 }",
-    ]
+    ],
   )
 }
 
 pub fn decode_contributor(json_obj: Dynamic) -> Result(Contributor, String) {
-  todo
+  try author = dynamic.field(json_obj, "author")
+  try dynamic_name = dynamic.field(author, "name")
+  try user = dynamic.field(author, "user")
+  try dynamic_github = dynamic.field(user, "url")
+
+  try name = dynamic.string(dynamic_name)
+  try github = dynamic.string(dynamic_github)
+
+  Ok(Contributor(name: name, github: github))
 }
 
-pub fn parse_contributors(response_json: String) -> Result(Contributorspage, String) {
+pub fn parse_contributors(
+  response_json: String,
+) -> Result(Contributorspage, String) {
   let res = decode_json_from_string(response_json)
   try data = dynamic.field(res, "data")
   try repo = dynamic.field(data, "repository")
@@ -423,11 +444,9 @@ pub fn parse_contributors(response_json: String) -> Result(Contributorspage, Str
 
   let cursor = case nextpage {
     False -> Error(Nil)
-    True -> { 
-      dynamic.field(pageinfo, "endCursor")
+    True -> dynamic.field(pageinfo, "endCursor")
       |> result.then(dynamic.string)
       |> result.map_error(fn(_) { Nil })
-    }
   }
 
   try nodes = dynamic.field(history, "nodes")
@@ -437,8 +456,25 @@ pub fn parse_contributors(response_json: String) -> Result(Contributorspage, Str
   Ok(Contributorspage(nextpage_cursor: cursor, contributor_list: contributors))
 }
 
+pub fn remove_duplicates(slist: List(String)) -> Set(String) {
+  list.fold(
+    over: slist,
+    from: set.new(),
+    with: fn(elem, acc) { set.insert(acc, elem) },
+  )
+}
+
 pub fn extract_contributors(page: Contributorspage) -> List(String) {
-  todo
+  let initial_list = list.map(
+    page.contributor_list,
+    fn(contributor: Contributor) {
+      string.concat(["[", contributor.name, "](", contributor.github, ")"])
+    },
+  )
+  let sorted = list.sort(initial_list, string.compare)
+
+  remove_duplicates(sorted)
+  |> set.to_list
 }
 
 pub fn call_api_for_contributors(
@@ -448,12 +484,30 @@ pub fn call_api_for_contributors(
   cursor: Option(String),
   contributor_list_md: List(String),
 ) -> Result(List(String), String) {
-  //todo make this construct fn
-  let query = construct_contributor_query(cursor, from_version, to_version)
+  //get from and to dates from version numbers
+  let datetimes = api_release_datetimes(token, from_version, to_version)
+  let use_from = case datetimes {
+    Ok(tuple(from, to)) -> from
+    _ -> "null"
+  }
+  let use_to = case datetimes {
+    Ok(tuple(from, to)) -> to
+    _ -> "null"
+  }
+
+  //construct contributors query
+  let query = construct_contributor_query(
+    cursor,
+    from_version,
+    to_version,
+    option.None,
+  )
+
   try response_json = call_api(token, query)
-  //todo make this parse fn
+
+  //parse response to query 
   try contributorpage = parse_contributors(response_json)
-  //todo write extract fn
+
   let contributor_list_md = list.append(
     contributor_list_md,
     extract_contributors(contributorpage),
