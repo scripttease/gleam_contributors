@@ -274,11 +274,9 @@ pub type Contributorspage {
 //TODO BROKEN this version is null and it cant be...
 pub fn construct_release_query(version: String) -> String {
   let use_version = string.concat(["\"", version, "\""])
-  io.debug("this is use_version")
-  io.debug(use_version)
+
   //   _ -> "null"
   // }
-
   string.concat(
     [
       "{
@@ -320,19 +318,15 @@ pub fn api_release_datetimes(
   to_version: String,
 ) -> Result(tuple(String, String), String) {
   let query_from = construct_release_query(from_version)
-  io.debug(query_from)
-  io.debug("this was query from")
   let query_to = construct_release_query(to_version)
 
   try response_json = call_api(token, query_from)
-  io.debug("datetime api call")
-  io.debug(response_json)
   try from_datetime = parse_datetime(response_json)
 
   try response_json = call_api(token, query_to)
   try to_datetime = parse_datetime(response_json)
 
-//TODO where do these come from is this the problem??
+  //TODO where do these come from is this the problem??
   Ok(tuple(from_datetime, to_datetime))
 }
 
@@ -358,7 +352,6 @@ pub fn construct_contributor_query(
   //   option.Some(to_date) -> string.concat(["\"", to_date, "\""])
   //   _ -> "null"
   // }
-
   let use_count = case count {
     option.Some(count) -> count
     _ -> "100"
@@ -442,11 +435,16 @@ pub fn parse_contributors(
 }
 
 pub fn remove_duplicates(slist: List(String)) -> Set(String) {
-  list.fold(
+  let dupes = list.fold(
     over: slist,
     from: set.new(),
     with: fn(elem, acc) { set.insert(acc, elem) },
   )
+  // io.debug("input list")
+  // io.debug(slist)
+  // io.debug("dupes")
+  // io.debug(dupes)
+  dupes
 }
 
 pub fn extract_contributors(page: Contributorspage) -> List(String) {
@@ -458,8 +456,12 @@ pub fn extract_contributors(page: Contributorspage) -> List(String) {
   )
   let sorted = list.sort(initial_list, string.compare)
 
-  remove_duplicates(sorted)
-  |> set.to_list
+  let filtered = remove_duplicates(sorted)
+  let filter_sorted_contribs = set.to_list(filtered)
+
+  // io.debug("Filtered and Sorted Contributors")
+  // io.debug(filter_sorted_contribs)
+  filter_sorted_contribs
 }
 
 pub fn call_api_for_contributors(
@@ -471,16 +473,8 @@ pub fn call_api_for_contributors(
   cursor: Option(String),
   contributor_list_md: List(String),
 ) -> Result(List(String), String) {
-
   //construct contributors query
-  let query = construct_contributor_query(
-    cursor,
-    from,
-    to,
-    option.None,
-  )
-io.debug("contributor query")
-io.debug(query)
+  let query = construct_contributor_query(cursor, from, to, option.None)
 
   try response_json = call_api(token, query)
 
@@ -507,15 +501,52 @@ io.debug(query)
   }
 }
 
-pub fn combine_lists(sponsors: List(String), contributors: List(String)) -> List(String) {
-   let combo = list.append(sponsors, contributors)
-   io.debug("combo")
-   io.debug(combo)
-  //  io.print(combo)
-  //  let flat = list.flatten(combo)
-  // list.sort(flat, string.compare)
-  //WHY DOES THIS WORL TODO
-  combo
+//TODO is contributors sorted first??
+//TODO ideally final string output looks like 
+// from Version (date) to Version (date)
+// All sponsors and contributors
+// List
+// Just contributors
+// Sponsors 500
+// Sponsors 100...
+// Contributors to gleam lang only?
+// Contributors to gleam-experiments?
+pub fn combine_and_sort_lists_to_string(
+  sponsors: List(String),
+  contributors: List(String),
+) -> String {
+  let combo = list.append(sponsors, contributors)
+  let filtered = set.to_list(set.from_list(combo))
+  //TODO seperate and test ???
+  let case_insensitive_string_compare = fn(a, b) {
+    string.compare(string.lowercase(a), string.lowercase(b))
+  }
+
+  let sorted_filtered = list.sort(filtered, case_insensitive_string_compare)
+
+  let estring = ""
+  let string_combo = list.fold(
+    sorted_filtered,
+    estring,
+    fn(elem, acc) {
+      acc
+      |> string.append("\n")
+      |> string.append(elem)
+    },
+  )
+  io.print("String combo")
+  io.print(string_combo)
+  string_combo
+}
+
+pub fn filter_sort(lst: List(String)) -> List(String) {
+  let filtered = set.to_list(set.from_list(lst))
+  //TODO seperate and test ???
+  let case_insensitive_string_compare = fn(a, b) {
+    string.compare(string.lowercase(a), string.lowercase(b))
+  }
+
+  list.sort(filtered, case_insensitive_string_compare)
 }
 
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
@@ -525,42 +556,40 @@ pub fn main(args: List(String)) -> Nil {
   // try returns early so they have to be in a let block as this fn returns Nil.
   let result = {
     try tuple(token, from_version, to_version) = parse_args(args)
-    io.debug("This is the from_version")
-    io.debug(from_version)
-  //get from and to dates from version numbers
-  //BROKEN
-  try datetimes = api_release_datetimes(token, from_version, to_version)
-  // THIS BIT IS BROKEN
-
-  let tuple(from, to) = datetimes
-
-  // let date_from = case datetimes {
-  //   tuple(from, to) -> from
-  //   _ -> "null"
-  // }
-  // let date_to = case datetimes {
-  //   Ok(tuple(from, to)) -> to
-  //   _ -> "null"
-  // }
-
-    io.debug("CALL API FOR SPONSORS")
+    //get from and to dates from version numbers
+    //BROKEN
+    try datetimes = api_release_datetimes(token, from_version, to_version)
+    // THIS BIT IS BROKEN
+    let tuple(from, to) = datetimes
+    // let date_from = case datetimes {
+    //   tuple(from, to) -> from
+    //   _ -> "null"
+    // }
+    // let date_to = case datetimes {
+    //   Ok(tuple(from, to)) -> to
+    //   _ -> "null"
+    // }
+    // io.debug("CALL API FOR SPONSORS")
     try sponsors = call_api_for_sponsors(token, option.None, [])
-
-    io.debug("CALL API FOR CONTRIBUTORS")
+    // io.debug("CALL API FOR CONTRIBUTORS")
     // TODO THIS FAILS
-    try contributors = call_api_for_contributors(token, from, to, option.None, [])
-
-    let combined_lists = combine_lists(sponsors, contributors)
-    io.debug("COMBINED LISTS")
-    io.debug(combined_lists)
-    Ok(datetimes)
+    try contributors = call_api_for_contributors(
+      token,
+      from,
+      to,
+      option.None,
+      [],
+    )
+    let combo = combine_and_sort_lists_to_string(sponsors, contributors)
+    // io.debug("COMBINED LISTS")
+    // io.debug(combined_lists)
+    Ok(combo)
   }
 
   case result {
-    Ok(datetimes) -> {
-      io.debug(datetimes)
-      io.println("Done!")
-    }
+    Ok(combo) -> // io.debug("COMBO LIST")
+    // io.debug(combo)
+    io.println("Done!")
     Error(e) -> io.println(e)
   }
 }

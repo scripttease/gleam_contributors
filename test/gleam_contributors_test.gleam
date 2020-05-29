@@ -553,3 +553,9 @@ pub fn extract_contributors_test() {
     ],
   )
 }
+
+pub fn filter_sort_test() {
+  let lst = ["a", "A", "z", "Z", "c", "z", "F", "B", "c"]
+  gleam_contributors.filter_sort(lst)
+  |> should.equal(["a", "A", "B", "c", "F", "z", "Z"])
+}
