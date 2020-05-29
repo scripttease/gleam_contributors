@@ -227,7 +227,7 @@ pub fn call_api_for_sponsors(
   try response_json = call_api(token, query)
   try sponsorpage = parse_sponsors(response_json)
 
-  // the extract sponsors fn should be taking a sponsor_list not sponsorpage? Is this overwriting?
+
   let sponsor_list_md = list.append(
     sponsor_list_md,
     extract_sponsors(sponsorpage),
@@ -549,30 +549,38 @@ pub fn filter_sort(lst: List(String)) -> List(String) {
   list.sort(filtered, case_insensitive_string_compare)
 }
 
+pub fn to_output_string(lst: List(String)) -> String {
+  let estring = ""
+  let string_out = list.fold(
+    lst,
+    estring,
+    fn(elem, acc) {
+      acc
+      |> string.append("\n")
+      |> string.append(elem)
+    },
+  )
+  string_out
+}
+
+pub fn output_string(from, to, v_from, v_to, sponsors, contributors, sponsors5, sponsors10, sponsors20, sponsors50, sponsors100, sponsors500) {
+  todo
+}
+
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
 // List(String) formed of whitespace seperated commands to stdin.
 // Top level, handles error-handling
 pub fn main(args: List(String)) -> Nil {
-  // try returns early so they have to be in a let block as this fn returns Nil.
+  //NB try returns early so they have to be in a let block as this fn returns Nil.
   let result = {
+    // Parses command line arguments
     try tuple(token, from_version, to_version) = parse_args(args)
-    //get from and to dates from version numbers
-    //BROKEN
+    // From and to dates from version numbers
     try datetimes = api_release_datetimes(token, from_version, to_version)
-    // THIS BIT IS BROKEN
     let tuple(from, to) = datetimes
-    // let date_from = case datetimes {
-    //   tuple(from, to) -> from
-    //   _ -> "null"
-    // }
-    // let date_to = case datetimes {
-    //   Ok(tuple(from, to)) -> to
-    //   _ -> "null"
-    // }
-    // io.debug("CALL API FOR SPONSORS")
+    // Calls API for Sponsors. Returns List(String) if Ok.
     try sponsors = call_api_for_sponsors(token, option.None, [])
-    // io.debug("CALL API FOR CONTRIBUTORS")
-    // TODO THIS FAILS
+    // Calls API for Contributors. Returns List(String) if Ok.
     try contributors = call_api_for_contributors(
       token,
       from,
@@ -580,9 +588,16 @@ pub fn main(args: List(String)) -> Nil {
       option.None,
       [],
     )
+
+    // let str_sponsors_contributors = to_output_string(filter_sort(list.append(sponsors, contributors)))
+
+    let str_sponsors = to_output_string(filter_sort(sponsors))
+    let str_contributors = to_output_string(filter_sort(contributors))
+
+
+    
+    // this and a case for each api so see what fails?
     let combo = combine_and_sort_lists_to_string(sponsors, contributors)
-    // io.debug("COMBINED LISTS")
-    // io.debug(combined_lists)
     Ok(combo)
   }
 

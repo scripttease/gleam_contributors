@@ -559,3 +559,75 @@ pub fn filter_sort_test() {
   gleam_contributors.filter_sort(lst)
   |> should.equal(["a", "A", "B", "c", "F", "z", "Z"])
 }
+
+// pub fn output_test() {
+//   let from = "2020-03-01T19:22:35Z"
+//   let to = "2020-05-01T19:22:35Z"
+//   let v_from = "v0.7.0"
+//   let v_to = "v0.8.0"
+//   let contributors = ["Al", "Fred", "Louis", "Zoltan"]
+//   let sponsors = ["Chris", "Jose", "Quinn", "Sam", "Tim", "Tom", "Victor", "Will"]
+//   let sponsors5 = ["Tim", "Will"]
+//   let sponsors10 = ["Sam"]
+//   let sponsors20 = ["Quinn"]
+//   let sponsors50 = ["Chris"]
+//   let sponsors100 = ["Jose"]
+//   let sponsors500 = ["Tom", "Victor"]
+
+//   gleam_contributors.output_string(from, to, v_from, v_to, sponsors, contributors, sponsors5, sponsors10, sponsors20, sponsors50, sponsors100, sponsors500)
+//   |> should.equal(
+//     "From v0.7.0 (date: 2020-03-01T19:22:35Z)
+//     To v0.8.0 (date: 2020-05-01T19:22:35Z)
+    
+//     All contributors and sponsors:
+//     Al
+//     Chris
+//     Fred
+//     Jose
+//     Louis
+//     Quinn
+//     Sam
+//     Tim
+//     Tom
+//     Victor
+//     Will
+//     Zoltan
+
+//     Contributors:
+//     Al
+//     Fred
+//     Louis
+//     Zoltan
+
+//     Sponsors:
+//     Chris
+//     Jose
+//     Quinn
+//     Sam
+//     Tim
+//     Tom
+//     Victor
+//     Will
+
+//     Sponsors $5
+//     Tim
+//     Will
+
+//     Sponsors $10
+//     Sam
+
+//     Sponsors $20
+//     Quinn
+
+//     Sponsors $50
+//     Chris
+
+//     Sponsors $100
+//     Jose
+
+//     Sponsors $500
+//     Tom
+//     Victor"
+//   )
+  
+// }
