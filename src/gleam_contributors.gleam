@@ -258,26 +258,6 @@ pub fn parse_args(
   }
 }
 
-// Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
-// List(String) formed of whitespace seperated commands to stdin.
-// Top level, handles error-handling
-pub fn main(args: List(String)) -> Nil {
-  // try returns early so they have to be in a let block as this fn returns Nil.
-  let result = {
-    try tuple(token, from_version, to_version) = parse_args(args)
-    try sponsors = call_api_for_sponsors(token, option.None, [])
-    Ok(sponsors)
-  }
-
-  case result {
-    Ok(sponsors) -> {
-      io.debug(sponsors)
-      io.println("Done!")
-    }
-    Error(e) -> io.println(e)
-  }
-}
-
 pub type Contributor {
   Contributor(name: String, github: String)
 }
@@ -291,11 +271,13 @@ pub type Contributorspage {
 }
 
 // Can this actually be null here?
-pub fn construct_release_query(version: Option(String)) -> String {
-  let use_version = case version {
-    option.Some(version) -> string.concat(["\"", version, "\""])
-    _ -> "null"
-  }
+//TODO BROKEN this version is null and it cant be...
+pub fn construct_release_query(version: String) -> String {
+  let use_version = string.concat(["\"", version, "\""])
+  io.debug("this is use_version")
+  io.debug(use_version)
+  //   _ -> "null"
+  // }
 
   string.concat(
     [
@@ -334,18 +316,23 @@ pub fn parse_datetime(json: String) -> Result(String, String) {
 // For this query to get datetimes they CANNOT be null in the API call
 pub fn api_release_datetimes(
   token: String,
-  from_version: Option(String),
-  to_version: Option(String),
+  from_version: String,
+  to_version: String,
 ) -> Result(tuple(String, String), String) {
   let query_from = construct_release_query(from_version)
+  io.debug(query_from)
+  io.debug("this was query from")
   let query_to = construct_release_query(to_version)
 
   try response_json = call_api(token, query_from)
+  io.debug("datetime api call")
+  io.debug(response_json)
   try from_datetime = parse_datetime(response_json)
 
   try response_json = call_api(token, query_to)
   try to_datetime = parse_datetime(response_json)
 
+//TODO where do these come from is this the problem??
   Ok(tuple(from_datetime, to_datetime))
 }
 
@@ -354,8 +341,8 @@ pub fn api_release_datetimes(
 //TODO so this needs to call the api...
 pub fn construct_contributor_query(
   cursor: Option(String),
-  from_date: Option(String),
-  to_date: Option(String),
+  from_date: String,
+  to_date: String,
   count: Option(String),
 ) -> String {
   // of use in tests, otherwise 100 results
@@ -364,15 +351,13 @@ pub fn construct_contributor_query(
     _ -> "null"
   }
 
-  let use_from_date = case from_date {
-    option.Some(from_date) -> string.concat(["\"", from_date, "\""])
-    _ -> "null"
-  }
+  let use_from_date = string.concat(["\"", from_date, "\""])
+  let use_to_date = string.concat(["\"", to_date, "\""])
 
-  let use_to_date = case to_date {
-    option.Some(to_date) -> string.concat(["\"", to_date, "\""])
-    _ -> "null"
-  }
+  // let use_to_date = case to_date {
+  //   option.Some(to_date) -> string.concat(["\"", to_date, "\""])
+  //   _ -> "null"
+  // }
 
   let use_count = case count {
     option.Some(count) -> count
@@ -479,29 +464,23 @@ pub fn extract_contributors(page: Contributorspage) -> List(String) {
 
 pub fn call_api_for_contributors(
   token: String,
-  from_version: Option(String),
-  to_version: Option(String),
+  from: String,
+  to: String,
+  // from_version: Option(String),
+  // to_version: Option(String),
   cursor: Option(String),
   contributor_list_md: List(String),
 ) -> Result(List(String), String) {
-  //get from and to dates from version numbers
-  let datetimes = api_release_datetimes(token, from_version, to_version)
-  let use_from = case datetimes {
-    Ok(tuple(from, to)) -> from
-    _ -> "null"
-  }
-  let use_to = case datetimes {
-    Ok(tuple(from, to)) -> to
-    _ -> "null"
-  }
 
   //construct contributors query
   let query = construct_contributor_query(
     cursor,
-    from_version,
-    to_version,
+    from,
+    to,
     option.None,
   )
+io.debug("contributor query")
+io.debug(query)
 
   try response_json = call_api(token, query)
 
@@ -518,12 +497,70 @@ pub fn call_api_for_contributors(
       let cursor_opt = option.Some(cursor)
       call_api_for_contributors(
         token,
-        from_version,
-        to_version,
+        from,
+        to,
         cursor_opt,
         contributor_list_md,
       )
     }
     _ -> Ok(contributor_list_md)
+  }
+}
+
+pub fn combine_lists(sponsors: List(String), contributors: List(String)) -> List(String) {
+   let combo = list.append(sponsors, contributors)
+   io.debug("combo")
+   io.debug(combo)
+  //  io.print(combo)
+  //  let flat = list.flatten(combo)
+  // list.sort(flat, string.compare)
+  //WHY DOES THIS WORL TODO
+  combo
+}
+
+// Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
+// List(String) formed of whitespace seperated commands to stdin.
+// Top level, handles error-handling
+pub fn main(args: List(String)) -> Nil {
+  // try returns early so they have to be in a let block as this fn returns Nil.
+  let result = {
+    try tuple(token, from_version, to_version) = parse_args(args)
+    io.debug("This is the from_version")
+    io.debug(from_version)
+  //get from and to dates from version numbers
+  //BROKEN
+  try datetimes = api_release_datetimes(token, from_version, to_version)
+  // THIS BIT IS BROKEN
+
+  let tuple(from, to) = datetimes
+
+  // let date_from = case datetimes {
+  //   tuple(from, to) -> from
+  //   _ -> "null"
+  // }
+  // let date_to = case datetimes {
+  //   Ok(tuple(from, to)) -> to
+  //   _ -> "null"
+  // }
+
+    io.debug("CALL API FOR SPONSORS")
+    try sponsors = call_api_for_sponsors(token, option.None, [])
+
+    io.debug("CALL API FOR CONTRIBUTORS")
+    // TODO THIS FAILS
+    try contributors = call_api_for_contributors(token, from, to, option.None, [])
+
+    let combined_lists = combine_lists(sponsors, contributors)
+    io.debug("COMBINED LISTS")
+    io.debug(combined_lists)
+    Ok(datetimes)
+  }
+
+  case result {
+    Ok(datetimes) -> {
+      io.debug(datetimes)
+      io.println("Done!")
+    }
+    Error(e) -> io.println(e)
   }
 }

@@ -324,7 +324,7 @@ pub fn construct_sponsor_query_nonum_result_test() {
 }
 
 pub fn construct_release_query_test() {
-  let version = option.Some("v0.8.0")
+  let version = "v0.8.0"
 
   gleam_contributors.construct_release_query(version)
   |> should.equal(
@@ -366,8 +366,8 @@ pub fn parse_datetime_test() {
 
 pub fn construct_contributor_query_test() {
   let cursor = option.None
-  let from_version = option.Some("2020-03-01T19:22:35Z")
-  let to_version = option.Some("2020-05-07T18:57:47Z")
+  let from_version = "2020-03-01T19:22:35Z"
+  let to_version = "2020-05-07T18:57:47Z"
   let count = option.Some("5")
 
   gleam_contributors.construct_contributor_query(
