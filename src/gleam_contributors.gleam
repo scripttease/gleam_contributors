@@ -1,5 +1,6 @@
 // to add lib open rebar.config, add the deps
 import gleam/result
+import gleam/map.{Map}
 import gleam/dynamic.{Dynamic}
 import gleam/httpc.{Text, Response}
 import gleam/http.{Post}
@@ -99,24 +100,20 @@ pub fn construct_sponsor_query(
   )
 }
 
-pub fn extract_sponsors(page: Sponsorspage) -> List(String) {
-  list.map(
-    page.sponsor_list,
-    fn(sponsor: Sponsor) {
-      string.concat(["[", sponsor.name, "]", "(", sponsor.github, ")"])
-    },
-  )
-  |> list.sort(string.compare)
-}
+// make this fn have a filter that takes an amount as an optional arg TODO
+// pub fn extract_sponsors(page: Sponsorspage) -> List(String) {
+//   list.map(
+//     page.sponsor_list,
+//     fn(sponsor: Sponsor) {
+//       string.concat(["[", sponsor.name, "]", "(", sponsor.github, ")"])
+//     },
+//   )
+//   |> list.sort(string.compare)
+// }
 
-pub fn extract_sponsors_500c(page: Sponsorspage) -> List(String) {
-  let upto_500_list = list.filter(
-    page.sponsor_list,
-    fn(sponsor: Sponsor) { sponsor.cents <= 500 },
-  )
-
+pub fn extract_sponsors(sponsors_list: List(Sponsor)) -> List(String) {
   list.map(
-    upto_500_list,
+    sponsors_list,
     fn(sponsor: Sponsor) {
       string.concat(["[", sponsor.name, "]", "(", sponsor.github, ")"])
     },
@@ -220,27 +217,46 @@ pub fn call_api(token: String, query: String) -> Result(String, String) {
 pub fn call_api_for_sponsors(
   token: String,
   cursor: Option(String),
-  sponsor_list_md: List(String),
-) -> Result(List(String), String) {
+  // sponsor_list_md: List(String),
+  sponsor_record_list: List(Sponsor),
+) -> Result(List(Sponsor), String) {
   let query = construct_sponsor_query(cursor, option.None)
 
   try response_json = call_api(token, query)
   try sponsorpage = parse_sponsors(response_json)
 
-
-  let sponsor_list_md = list.append(
-    sponsor_list_md,
-    extract_sponsors(sponsorpage),
-  )
+    let sponsor_record_list = list.append(sponsor_record_list, sponsorpage.sponsor_list)
 
   case sponsorpage.nextpage_cursor {
     Ok(cursor) -> {
       let cursor_opt = option.Some(cursor)
-      call_api_for_sponsors(token, cursor_opt, sponsor_list_md)
+      call_api_for_sponsors(token, cursor_opt, sponsor_record_list)
     }
-    _ -> Ok(sponsor_list_md)
+    _ -> Ok(sponsor_record_list)
   }
+
+  // First I want a list of all pages of the sponsor records
+  // Overall I think I want this fn to return multiple lists
+  // let sponsor_list_md = list.append(
+  //   sponsor_list_md,
+  //   extract_sponsors(sponsorpage),
+  // )
+  //instead of returning 7 lists can return a map like
+  // Map(String, List(Sponsor) or Map(String, List(String))
+  //and there will be a key say "all" or "5" and the value is the list of just thise ones (can ne a list of sponsors or i could do the string conversion in this bit?)
 }
+
+
+pub fn listsponsors_to_liststring(lst: List(Sponsor)) -> List(String) {
+  list.map(
+    lst,
+    fn(sponsor: Sponsor) {
+      string.concat(["[", sponsor.name, "]", "(", sponsor.github, ")"])
+    },
+  )
+  |> list.sort(string.compare)
+}
+
 
 // handles command line stdin
 pub fn parse_args(
@@ -563,9 +579,6 @@ pub fn to_output_string(lst: List(String)) -> String {
   string_out
 }
 
-pub fn output_string(from, to, v_from, v_to, sponsors, contributors, sponsors5, sponsors10, sponsors20, sponsors50, sponsors100, sponsors500) {
-  todo
-}
 
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
 // List(String) formed of whitespace seperated commands to stdin.
@@ -589,22 +602,22 @@ pub fn main(args: List(String)) -> Nil {
       [],
     )
 
-    // let str_sponsors_contributors = to_output_string(filter_sort(list.append(sponsors, contributors)))
+    //TODO optional amount arg
+    let lst_str_sponsors = extract_sponsors(sponsors)
 
-    let str_sponsors = to_output_string(filter_sort(sponsors))
+    let str_sponsors_contributors = to_output_string(filter_sort(list.append(lst_str_sponsors, contributors)))
     let str_contributors = to_output_string(filter_sort(contributors))
 
-
-    
     // this and a case for each api so see what fails?
-    let combo = combine_and_sort_lists_to_string(sponsors, contributors)
+    let combo = combine_and_sort_lists_to_string(lst_str_sponsors, contributors)
     Ok(combo)
   }
 
   case result {
-    Ok(combo) -> // io.debug("COMBO LIST")
-    // io.debug(combo)
-    io.println("Done!")
+    Ok(combo) -> 
+    // io.debug("COMBO LIST")
+    io.print(combo)
+    // io.println("Done!")
     Error(e) -> io.println(e)
   }
 }

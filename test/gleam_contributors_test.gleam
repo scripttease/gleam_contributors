@@ -92,9 +92,10 @@ pub fn parse_sponsor_test() {
 }
 
 pub fn extract_sponsors_test() {
-  let page = Sponsorspage(
-    nextpage_cursor: Ok("Mg"),
-    sponsor_list: [
+  // let page = Sponsorspage(
+  //   nextpage_cursor: Ok("Mg"),
+  //   sponsor_list: [
+    let lst = [
       Sponsor(
         name: "Chris Young",
         avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
@@ -109,9 +110,8 @@ pub fn extract_sponsors_test() {
         website: Ok("http://blog.menfin.info/"),
         cents: 500,
       ),
-    ],
-  )
-  gleam_contributors.extract_sponsors(page)
+    ]
+  gleam_contributors.extract_sponsors(lst)
   |> should.equal(
     [
       "[Bruno Michel](https://github.com/nono)",
@@ -120,97 +120,97 @@ pub fn extract_sponsors_test() {
   )
 }
 
-pub fn extract_sponsors_500c_test() {
-  let page = Sponsorspage(
-    nextpage_cursor: Ok("Mg"),
-    sponsor_list: [
-      Sponsor(
-        name: "Chris Young",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/worldofchris",
-        website: Error(Nil),
-        cents: 5000,
-      ),
-      Sponsor(
-        name: "Bruno Michel",
-        github: "https://github.com/nono",
-        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
-        website: Ok("http://blog.menfin.info/"),
-        cents: 500,
-      ),
-    ],
-  )
-  gleam_contributors.extract_sponsors_500c(page)
-  |> should.equal(["[Bruno Michel](https://github.com/nono)"])
-}
+// pub fn extract_sponsors_500c_test() {
+//   let page = Sponsorspage(
+//     nextpage_cursor: Ok("Mg"),
+//     sponsor_list: [
+//       Sponsor(
+//         name: "Chris Young",
+//         avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+//         github: "https://github.com/worldofchris",
+//         website: Error(Nil),
+//         cents: 5000,
+//       ),
+//       Sponsor(
+//         name: "Bruno Michel",
+//         github: "https://github.com/nono",
+//         avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+//         website: Ok("http://blog.menfin.info/"),
+//         cents: 500,
+//       ),
+//     ],
+//   )
+//   gleam_contributors.extract_sponsors_500c(page)
+//   |> should.equal(["[Bruno Michel](https://github.com/nono)"])
+// }
 
-pub fn extract_sponsors_none_500c_test() {
-  let page = Sponsorspage(
-    nextpage_cursor: Ok("Mg"),
-    sponsor_list: [
-      Sponsor(
-        name: "Chris Young",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/worldofchris",
-        website: Error(Nil),
-        cents: 5000,
-      ),
-      Sponsor(
-        name: "Bruno Michel",
-        github: "https://github.com/nono",
-        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
-        website: Ok("http://blog.menfin.info/"),
-        cents: 2000,
-      ),
-    ],
-  )
-  gleam_contributors.extract_sponsors_500c(page)
-  |> should.equal([])
-}
+// pub fn extract_sponsors_none_500c_test() {
+//   let page = Sponsorspage(
+//     nextpage_cursor: Ok("Mg"),
+//     sponsor_list: [
+//       Sponsor(
+//         name: "Chris Young",
+//         avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+//         github: "https://github.com/worldofchris",
+//         website: Error(Nil),
+//         cents: 5000,
+//       ),
+//       Sponsor(
+//         name: "Bruno Michel",
+//         github: "https://github.com/nono",
+//         avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+//         website: Ok("http://blog.menfin.info/"),
+//         cents: 2000,
+//       ),
+//     ],
+//   )
+//   gleam_contributors.extract_sponsors_500c(page)
+//   |> should.equal([])
+// }
 
-pub fn extract_sponsors_many_unordered_500c() {
-  let page = Sponsorspage(
-    nextpage_cursor: Ok("Mg"),
-    sponsor_list: [
-      Sponsor(
-        name: "Chris Young",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/worldofchris",
-        website: Error(Nil),
-        cents: 500,
-      ),
-      Sponsor(
-        name: "Bruno Michel",
-        github: "https://github.com/nono",
-        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
-        website: Ok("http://blog.menfin.info/"),
-        cents: 2000,
-      ),
-      Sponsor(
-        name: "Scripttease",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/scripttease",
-        website: Error(Nil),
-        cents: 500,
-      ),
-      Sponsor(
-        name: "Jose Valim",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/josevalim",
-        website: Error(Nil),
-        cents: 500,
-      ),
-    ],
-  )
-  gleam_contributors.extract_sponsors_500c(page)
-  |> should.equal(
-    [
-      "[Chris Young](https://github.com/worldofchris)",
-      "[Jose Valim](https://github.com/josevalim)",
-      "[Scripttease](https://github.com/scripttease)",
-    ],
-  )
-}
+// pub fn extract_sponsors_many_unordered_500c() {
+//   let page = Sponsorspage(
+//     nextpage_cursor: Ok("Mg"),
+//     sponsor_list: [
+//       Sponsor(
+//         name: "Chris Young",
+//         avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+//         github: "https://github.com/worldofchris",
+//         website: Error(Nil),
+//         cents: 500,
+//       ),
+//       Sponsor(
+//         name: "Bruno Michel",
+//         github: "https://github.com/nono",
+//         avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+//         website: Ok("http://blog.menfin.info/"),
+//         cents: 2000,
+//       ),
+//       Sponsor(
+//         name: "Scripttease",
+//         avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+//         github: "https://github.com/scripttease",
+//         website: Error(Nil),
+//         cents: 500,
+//       ),
+//       Sponsor(
+//         name: "Jose Valim",
+//         avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+//         github: "https://github.com/josevalim",
+//         website: Error(Nil),
+//         cents: 500,
+//       ),
+//     ],
+//   )
+//   gleam_contributors.extract_sponsors_500c(page)
+//   |> should.equal(
+//     [
+//       "[Chris Young](https://github.com/worldofchris)",
+//       "[Jose Valim](https://github.com/josevalim)",
+//       "[Scripttease](https://github.com/scripttease)",
+//     ],
+//   )
+// }
 
 pub fn construct_sponsor_query_test() {
   let cursor = option.Some("Ng")
@@ -559,75 +559,3 @@ pub fn filter_sort_test() {
   gleam_contributors.filter_sort(lst)
   |> should.equal(["a", "A", "B", "c", "F", "z", "Z"])
 }
-
-// pub fn output_test() {
-//   let from = "2020-03-01T19:22:35Z"
-//   let to = "2020-05-01T19:22:35Z"
-//   let v_from = "v0.7.0"
-//   let v_to = "v0.8.0"
-//   let contributors = ["Al", "Fred", "Louis", "Zoltan"]
-//   let sponsors = ["Chris", "Jose", "Quinn", "Sam", "Tim", "Tom", "Victor", "Will"]
-//   let sponsors5 = ["Tim", "Will"]
-//   let sponsors10 = ["Sam"]
-//   let sponsors20 = ["Quinn"]
-//   let sponsors50 = ["Chris"]
-//   let sponsors100 = ["Jose"]
-//   let sponsors500 = ["Tom", "Victor"]
-
-//   gleam_contributors.output_string(from, to, v_from, v_to, sponsors, contributors, sponsors5, sponsors10, sponsors20, sponsors50, sponsors100, sponsors500)
-//   |> should.equal(
-//     "From v0.7.0 (date: 2020-03-01T19:22:35Z)
-//     To v0.8.0 (date: 2020-05-01T19:22:35Z)
-    
-//     All contributors and sponsors:
-//     Al
-//     Chris
-//     Fred
-//     Jose
-//     Louis
-//     Quinn
-//     Sam
-//     Tim
-//     Tom
-//     Victor
-//     Will
-//     Zoltan
-
-//     Contributors:
-//     Al
-//     Fred
-//     Louis
-//     Zoltan
-
-//     Sponsors:
-//     Chris
-//     Jose
-//     Quinn
-//     Sam
-//     Tim
-//     Tom
-//     Victor
-//     Will
-
-//     Sponsors $5
-//     Tim
-//     Will
-
-//     Sponsors $10
-//     Sam
-
-//     Sponsors $20
-//     Quinn
-
-//     Sponsors $50
-//     Chris
-
-//     Sponsors $100
-//     Jose
-
-//     Sponsors $500
-//     Tom
-//     Victor"
-//   )
-  
-// }
