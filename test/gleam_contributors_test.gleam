@@ -91,10 +91,11 @@ pub fn parse_sponsor_test() {
   )
 }
 
-pub fn extract_sponsors_test() {
-  let page = Sponsorspage(
-    nextpage_cursor: Ok("Mg"),
-    sponsor_list: [
+pub fn list_sponsor_to_list_string_test() {
+  // let page = Sponsorspage(
+  //   nextpage_cursor: Ok("Mg"),
+  //   sponsor_list: [
+    let lst = [
       Sponsor(
         name: "Chris Young",
         avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
@@ -109,9 +110,9 @@ pub fn extract_sponsors_test() {
         website: Ok("http://blog.menfin.info/"),
         cents: 500,
       ),
-    ],
-  )
-  gleam_contributors.extract_sponsors(page)
+    ]
+  
+  gleam_contributors.list_sponsor_to_list_string(lst)
   |> should.equal(
     [
       "[Bruno Michel](https://github.com/nono)",

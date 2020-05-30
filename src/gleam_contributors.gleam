@@ -99,9 +99,9 @@ pub fn construct_sponsor_query(
   )
 }
 
-pub fn extract_sponsors(page: Sponsorspage) -> List(String) {
+pub fn list_sponsor_to_list_string(sponsors_list: List(Sponsor)) -> List(String) {
   list.map(
-    page.sponsor_list,
+    sponsors_list,
     fn(sponsor: Sponsor) {
       string.concat(["[", sponsor.name, "]", "(", sponsor.github, ")"])
     },
@@ -220,25 +220,24 @@ pub fn call_api(token: String, query: String) -> Result(String, String) {
 pub fn call_api_for_sponsors(
   token: String,
   cursor: Option(String),
-  sponsor_list_md: List(String),
-) -> Result(List(String), String) {
+  sponsor_list: List(Sponsor),
+) -> Result(List(Sponsor), String) {
   let query = construct_sponsor_query(cursor, option.None)
 
   try response_json = call_api(token, query)
   try sponsorpage = parse_sponsors(response_json)
 
   // the extract sponsors fn should be taking a sponsor_list not sponsorpage? Is this overwriting?
-  let sponsor_list_md = list.append(
-    sponsor_list_md,
-    extract_sponsors(sponsorpage),
-  )
+  let sponsor_list = list.append(
+    sponsor_list, sponsorpage.sponsor_list)
+  
 
   case sponsorpage.nextpage_cursor {
     Ok(cursor) -> {
       let cursor_opt = option.Some(cursor)
-      call_api_for_sponsors(token, cursor_opt, sponsor_list_md)
+      call_api_for_sponsors(token, cursor_opt, sponsor_list)
     }
-    _ -> Ok(sponsor_list_md)
+    _ -> Ok(sponsor_list)
   }
 }
 
@@ -255,26 +254,6 @@ pub fn parse_args(
     _ -> Error(
       "Usage: _buildfilename $TOKEN $FROM_VESRION $TO_VESRION \n version in format v0.3.0",
     )
-  }
-}
-
-// Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
-// List(String) formed of whitespace seperated commands to stdin.
-// Top level, handles error-handling
-pub fn main(args: List(String)) -> Nil {
-  // try returns early so they have to be in a let block as this fn returns Nil.
-  let result = {
-    try tuple(token, from_version, to_version) = parse_args(args)
-    try sponsors = call_api_for_sponsors(token, option.None, [])
-    Ok(sponsors)
-  }
-
-  case result {
-    Ok(sponsors) -> {
-      io.debug(sponsors)
-      io.println("Done!")
-    }
-    Error(e) -> io.println(e)
   }
 }
 
@@ -525,5 +504,26 @@ pub fn call_api_for_contributors(
       )
     }
     _ -> Ok(contributor_list_md)
+  }
+}
+
+// Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
+// List(String) formed of whitespace seperated commands to stdin.
+// Top level, handles error-handling
+pub fn main(args: List(String)) -> Nil {
+  // try returns early so they have to be in a let block as this fn returns Nil.
+  let result = {
+    try tuple(token, from_version, to_version) = parse_args(args)
+    try sponsors = call_api_for_sponsors(token, option.None, [])
+    let sponsor_string_list = list_sponsor_to_list_string(sponsors)
+    Ok(sponsor_string_list)
+  }
+
+  case result {
+    Ok(sponsors) -> {
+      io.debug(sponsors)
+      io.println("Done!")
+    }
+    Error(e) -> io.println(e)
   }
 }
