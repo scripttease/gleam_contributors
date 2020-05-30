@@ -143,7 +143,7 @@ pub fn filter_sponsors_test() {
   |> should.equal(["[Bruno Michel](https://github.com/nono)"])
 }
 
-pub fn extract_sponsors_none_test() {
+pub fn filter_sponsors_none_test() {
   let lst = [
       Sponsor(
         name: "Chris Young",
@@ -167,7 +167,7 @@ pub fn extract_sponsors_none_test() {
   |> should.equal([])
 }
 
-pub fn extract_sponsors_many_unordered_500c() {
+pub fn filter_sponsors_many_unordered_500c() {
 
   let lst = [
       Sponsor(
@@ -520,10 +520,11 @@ pub fn remove_duplicates_test() {
   |> should.equal(set.from_list(["a", "b", "c"]))
 }
 
-pub fn extract_contributors_test() {
-  let page = Contributorspage(
-    nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
-    contributor_list: [
+pub fn list_contributor_to_list_string_test() {
+  // let page = Contributorspage(
+  //   nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
+  //   contributor_list: [
+    let lst = [
       Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
       Contributor(
         name: "Tom Whatmore",
@@ -535,11 +536,10 @@ pub fn extract_contributors_test() {
         name: "Quinn Wilton",
         github: "https://github.com/QuinnWilton",
       ),
-    ],
-  )
+    ]
+  
 
-  gleam_contributors.extract_contributors(page)
-  |> should.equal(
+  gleam_contributors.list_contributor_to_list_string(lst) |> should.equal(
     [
       "[Louis Pilfold](https://github.com/lpil)",
       "[Quinn Wilton](https://github.com/QuinnWilton)",

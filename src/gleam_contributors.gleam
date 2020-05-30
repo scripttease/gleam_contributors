@@ -439,13 +439,16 @@ pub fn remove_duplicates(slist: List(String)) -> Set(String) {
   )
 }
 
-pub fn extract_contributors(page: Contributorspage) -> List(String) {
+//TODO can change to 'record' if give lists same field name
+pub fn list_contributor_to_list_string(lst: List(Contributor)) -> List(String) {
   let initial_list = list.map(
-    page.contributor_list,
+    lst,
     fn(contributor: Contributor) {
       string.concat(["[", contributor.name, "](", contributor.github, ")"])
     },
   )
+  //add string compare lowercase
+  //TODO can the filter and sort be handled later or is here best? TODO separate them out
   let sorted = list.sort(initial_list, string.compare)
 
   remove_duplicates(sorted)
@@ -459,8 +462,8 @@ pub fn call_api_for_contributors(
   // from_version: Option(String),
   // to_version: Option(String),
   cursor: Option(String),
-  contributor_list_md: List(String),
-) -> Result(List(String), String) {
+  contributor_list: List(Contributor),
+) -> Result(List(Contributor), String) {
   //get from and to dates from version numbers
   // let datetimes = api_release_datetimes(token, from_version, to_version)
   // let use_from = case datetimes {
@@ -479,10 +482,9 @@ pub fn call_api_for_contributors(
   //parse response to query 
   try contributorpage = parse_contributors(response_json)
 
-  let contributor_list_md = list.append(
-    contributor_list_md,
-    extract_contributors(contributorpage),
-  )
+  let contributor_list = list.append(
+    contributor_list,
+    contributorpage.contributor_list)
 
   case contributorpage.nextpage_cursor {
     Ok(cursor) -> {
@@ -492,10 +494,10 @@ pub fn call_api_for_contributors(
         from,
         to,
         cursor_opt,
-        contributor_list_md,
+        contributor_list,
       )
     }
-    _ -> Ok(contributor_list_md)
+    _ -> Ok(contributor_list)
   }
 }
 
@@ -572,21 +574,25 @@ pub fn main(args: List(String)) -> Nil {
       option.None,
       [],
     )
+
+    let str_lst_contributors = list_contributor_to_list_string(contributors)
     //TODO URGENT Add arg here for filtering by amount
-    let lst_str_sponsors = list_sponsor_to_list_string(sponsors)
+    let str_lst_sponsors = list_sponsor_to_list_string(sponsors)
+
+    // let str_contributors = to_output_string(filter_sort(contributors))
+
     let str_sponsors_contributors = to_output_string(
-      filter_sort(list.append(lst_str_sponsors, contributors)),
+      filter_sort(list.append(str_lst_sponsors, str_lst_contributors)),
     )
-    let str_contributors = to_output_string(filter_sort(contributors))
     // this and a case for each api so see what fails?
     // nb do i need the combine fn still I have the other two
-    let combo = combine_and_sort_lists_to_string(lst_str_sponsors, contributors)
-    Ok(combo)
+    // let combo = combine_and_sort_lists_to_string(lst_str_sponsors, contributors)
+    Ok(str_sponsors_contributors)
   }
 
   case result {
-    Ok(combo) -> {
-      io.print(combo)
+    Ok(str_sponsors_contributors) -> {
+      io.print(str_sponsors_contributors)
       io.println("Done!")
     }
     Error(e) -> io.println(e)
