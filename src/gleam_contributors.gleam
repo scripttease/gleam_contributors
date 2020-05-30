@@ -1,4 +1,4 @@
-// to add lib open rebar.config, add the deps
+// To add an Erlang library, add deps to rebar.config.
 import gleam/result
 import gleam/dynamic.{Dynamic}
 import gleam/httpc.{Text, Response}
@@ -38,7 +38,10 @@ pub type Sponsor {
   )
 }
 
-// Type required to see if there is a cursor in the data and a next page. If so, another API request is required
+//Type to interrogate a single page response from the API and determine if
+//there is further pagination. The github API will return a maximum of 100
+//results per page, however if there are more pages, the endCursor can be used
+//as a starting point for the next query.
 pub type Sponsorspage {
   Sponsorspage(
     nextpage_cursor: Result(String, Nil),
@@ -46,7 +49,7 @@ pub type Sponsorspage {
   )
 }
 
-//concatenates optional query params into query
+//Concatenates optional query params into sponsor query
 pub fn construct_sponsor_query(
   cursor: Option(String),
   num_results: Option(String),
@@ -117,22 +120,17 @@ pub fn filter_sponsors(lst: List(Sponsor), dollars) -> List(Sponsor) {
   list.filter(lst, fn(sponsor: Sponsor) { sponsor.cents >= cents })
 }
 
-// would be better to use try_decode but its a thruple...
 // TODO convert to try_decode OR check for valid json response.
 external fn decode_json_from_string(String) -> Dynamic =
   "jsone" "decode"
 
-// Decode sponsor section of the response JSON (List of hashmaps)
-// uses dynamic module.
+// Decodes sponsor section of the response JSON (List of treemaps)
 pub fn decode_sponsor(json_obj: Dynamic) -> Result(Sponsor, String) {
   try entity = dynamic.field(json_obj, "sponsorEntity")
-
   try dynamic_name = dynamic.field(entity, "name")
   try name = dynamic.string(dynamic_name)
-
   try dynamic_avatar = dynamic.field(entity, "avatarUrl")
   try avatar = dynamic.string(dynamic_avatar)
-
   try dynamic_github = dynamic.field(entity, "url")
   try github = dynamic.string(dynamic_github)
 
@@ -155,8 +153,7 @@ pub fn decode_sponsor(json_obj: Dynamic) -> Result(Sponsor, String) {
   )
 }
 
-// TODO call this fn.
-// Takes response json string and reurns a Sponsorspage by extracting values using the dynamic module. 
+// Takes response json string and returns a Sponsorspage  
 pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
   let res = decode_json_from_string(sponsors_json)
   try data = dynamic.field(res, "data")
@@ -167,7 +164,7 @@ pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
   try dynamic_nextpage = dynamic.field(page, "hasNextPage")
   try nextpage = dynamic.bool(dynamic_nextpage)
 
-  // TODO should this be an error? Give an error msg?
+  // TODO error message?
   let cursor = case nextpage {
     False -> Error(Nil)
     True -> dynamic.field(page, "endCursor")
@@ -197,6 +194,7 @@ pub fn call_api(token: String, query: String) -> Result(String, String) {
     ],
     body: Text("application/json", encode_json(json)),
   )
+  // TODO error(e) 
   let response = case result {
     Ok(response) -> {
       io.println(response.body)
@@ -220,7 +218,7 @@ pub fn call_api_for_sponsors(
   try response_json = call_api(token, query)
   try sponsorpage = parse_sponsors(response_json)
 
-  // the extract sponsors fn should be taking a sponsor_list not sponsorpage? Is this overwriting?
+  //The sponsor_list acts as an accumluator on the recursive call of the fn, and is therefore passed in as an arg.
   let sponsor_list = list.append(sponsor_list, sponsorpage.sponsor_list)
 
   case sponsorpage.nextpage_cursor {
@@ -232,7 +230,7 @@ pub fn call_api_for_sponsors(
   }
 }
 
-// handles command line stdin
+// Handles command line StdIn arguments
 pub fn parse_args(
   args: List(String),
 ) -> Result(tuple(String, String, String), String) {
@@ -243,7 +241,7 @@ pub fn parse_args(
       to_version,
     ] -> Ok(tuple(token, from_version, to_version))
     _ -> Error(
-      "Usage: _buildfilename $TOKEN $FROM_VESRION $TO_VESRION \n version in format v0.3.0",
+      "Usage: _buildfilename $TOKEN $FROM_VESRION $TO_VESRION \n(Version should be in format `v0.3.0`)",
     )
   }
 }
@@ -252,7 +250,7 @@ pub type Contributor {
   Contributor(name: String, github: String)
 }
 
-// could include avatarURl and websiteUrl if required
+// Could include avatarURl and websiteUrl if required
 pub type Contributorspage {
   Contributorspage(
     nextpage_cursor: Result(String, Nil),
@@ -260,7 +258,7 @@ pub type Contributorspage {
   )
 }
 
-// Can this actually be null here?
+// Constructs query to API to get the release datetime from the given version
 pub fn construct_release_query(version: String) -> String {
   let use_version = string.concat(["\"", version, "\""])
 
@@ -285,6 +283,7 @@ pub fn construct_release_query(version: String) -> String {
   )
 }
 
+//Converts response json.
 pub fn parse_datetime(json: String) -> Result(String, String) {
   let res = decode_json_from_string(json)
   try data = dynamic.field(res, "data")
@@ -298,8 +297,7 @@ pub fn parse_datetime(json: String) -> Result(String, String) {
   Ok(date)
 }
 
-// For this query to get datetimes they CANNOT be null in the API call
-pub fn api_release_datetimes(
+pub fn call_api_for_datetimes(
   token: String,
   from_version: String,
   to_version: String,
@@ -316,16 +314,13 @@ pub fn api_release_datetimes(
   Ok(tuple(from_datetime, to_datetime))
 }
 
-//TODO org gleam-experiments!!!
-//TODO from_version and to_v.. should be from_datetime...
-//TODO so this needs to call the api...
+//TODO make request to gleam-experiments
 pub fn construct_contributor_query(
   cursor: Option(String),
   from_date: String,
   to_date: String,
   count: Option(String),
 ) -> String {
-  // of use in tests, otherwise 100 results
   let use_cursor = case cursor {
     option.Some(cursor) -> string.concat(["\"", cursor, "\""])
     _ -> "null"
@@ -334,10 +329,7 @@ pub fn construct_contributor_query(
   let use_from_date = string.concat(["\"", from_date, "\""])
   let use_to_date = string.concat(["\"", to_date, "\""])
 
-  // let use_to_date = case to_date {
-  //   option.Some(to_date) -> string.concat(["\"", to_date, "\""])
-  //   _ -> "null"
-  // }
+  // Optional count is for use in integration tests. Otherwise the default is  100 results
   let use_count = case count {
     option.Some(count) -> count
     _ -> "100"
@@ -381,6 +373,9 @@ pub fn construct_contributor_query(
   )
 }
 
+// This is still parsing the response json into Gleam types, see
+// parse_contributors, but it is the contributor section only. To make the parse
+// function more readable
 pub fn decode_contributor(json_obj: Dynamic) -> Result(Contributor, String) {
   try author = dynamic.field(json_obj, "author")
   try dynamic_name = dynamic.field(author, "name")
@@ -393,6 +388,7 @@ pub fn decode_contributor(json_obj: Dynamic) -> Result(Contributor, String) {
   Ok(Contributor(name: name, github: github))
 }
 
+// Converts response json into Gleam type. Represents one page of contributors
 pub fn parse_contributors(
   response_json: String,
 ) -> Result(Contributorspage, String) {
@@ -420,6 +416,7 @@ pub fn parse_contributors(
   Ok(Contributorspage(nextpage_cursor: cursor, contributor_list: contributors))
 }
 
+//Uses the uniqueness property of sets to remove duplicates from list
 pub fn remove_duplicates(slist: List(String)) -> Set(String) {
   list.fold(
     over: slist,
@@ -428,7 +425,7 @@ pub fn remove_duplicates(slist: List(String)) -> Set(String) {
   )
 }
 
-//TODO can change to 'record' if give lists same field name
+//TODO: can abstract this to work for sponsor as well as contributor 'record' if there is a way of grouping types and I give  the lists the same field name
 pub fn list_contributor_to_list_string(lst: List(Contributor)) -> List(String) {
   let initial_list = list.map(
     lst,
@@ -436,8 +433,8 @@ pub fn list_contributor_to_list_string(lst: List(Contributor)) -> List(String) {
       string.concat(["[", contributor.name, "](", contributor.github, ")"])
     },
   )
-  //add string compare lowercase
-  //TODO can the filter and sort be handled later or is here best? TODO separate them out
+  //TODO add string compare lowercase
+  //TODO can the filter and sort be handled later or is here best?
   let sorted = list.sort(initial_list, string.compare)
 
   remove_duplicates(sorted)
@@ -448,27 +445,13 @@ pub fn call_api_for_contributors(
   token: String,
   from: String,
   to: String,
-  // from_version: Option(String),
-  // to_version: Option(String),
   cursor: Option(String),
   contributor_list: List(Contributor),
 ) -> Result(List(Contributor), String) {
-  //get from and to dates from version numbers
-  // let datetimes = api_release_datetimes(token, from_version, to_version)
-  // let use_from = case datetimes {
-  //   Ok(tuple(from, to)) -> from
-  //   _ -> "null"
-  // }
-  // let use_to = case datetimes {
-  //   Ok(tuple(from, to)) -> to
-  //   _ -> "null"
-  // }
-  //construct contributors query
   let query = construct_contributor_query(cursor, from, to, option.None)
 
   try response_json = call_api(token, query)
 
-  //parse response to query 
   try contributorpage = parse_contributors(response_json)
 
   let contributor_list = list.append(
@@ -491,7 +474,7 @@ pub fn combine_and_sort_lists_to_string(
 ) -> String {
   let combo = list.append(sponsors, contributors)
   let filtered = set.to_list(set.from_list(combo))
-  //TODO seperate and test ???
+  //TODO could separate this into another fn
   let case_insensitive_string_compare = fn(a, b) {
     string.compare(string.lowercase(a), string.lowercase(b))
   }
@@ -499,7 +482,8 @@ pub fn combine_and_sort_lists_to_string(
   let sorted_filtered = list.sort(filtered, case_insensitive_string_compare)
 
   let estring = ""
-  let string_combo = list.fold(
+
+  list.fold(
     sorted_filtered,
     estring,
     fn(elem, acc) {
@@ -508,14 +492,12 @@ pub fn combine_and_sort_lists_to_string(
       |> string.append(elem)
     },
   )
-  io.print("String combo")
-  io.print(string_combo)
-  string_combo
 }
 
 pub fn filter_sort(lst: List(String)) -> List(String) {
   let filtered = set.to_list(set.from_list(lst))
-  //TODO seperate and test ???
+
+  //TODO seperate out?
   let case_insensitive_string_compare = fn(a, b) {
     string.compare(string.lowercase(a), string.lowercase(b))
   }
@@ -523,6 +505,11 @@ pub fn filter_sort(lst: List(String)) -> List(String) {
   list.sort(filtered, case_insensitive_string_compare)
 }
 
+// We want main to output a single string that can be copy pasted into a
+// Markdown file. After all the data munging is done, the final step is to
+// create a single string in the desired format. Sorting and filtering cannot be
+// done on the string so they must be done first.
+//TODO add dates at top. Add filtered sponsors
 pub fn to_output_string(lst: List(String)) -> String {
   let estring = ""
   let string_out = list.fold(
@@ -541,12 +528,15 @@ pub fn to_output_string(lst: List(String)) -> String {
 // List(String) formed of whitespace seperated commands to stdin.
 // Top level, handles error-handling
 pub fn main(args: List(String)) -> Nil {
-  // try returns early so we need a let block, otherwise the fn would need t return the result for the try, rather than nil. All of the trys in the let block must have the same error (fail) type for this reason.
+  // Try returns early so we need a let block, otherwise the whole fn would need
+  // to return the same type as the result for the try, rather than nil. All of
+  // the trys in the let block must have the same error (failure mode/message)
+  // type for this reason.
   let result = {
     // Parses command line arguments
     try tuple(token, from_version, to_version) = parse_args(args)
     // From and to dates from version numbers
-    try datetimes = api_release_datetimes(token, from_version, to_version)
+    try datetimes = call_api_for_datetimes(token, from_version, to_version)
     let tuple(from, to) = datetimes
     // Calls API for Sponsors. Returns List(String) if Ok.
     try sponsors = call_api_for_sponsors(token, option.None, [])
@@ -558,15 +548,15 @@ pub fn main(args: List(String)) -> Nil {
       option.None,
       [],
     )
-    // TODO extract filter and sort logic from these initial lists
     let str_lst_contributors = list_contributor_to_list_string(contributors)
-    //TODO URGENT Add arg here for filtering by amount
     let str_lst_sponsors = list_sponsor_to_list_string(sponsors)
     let str_sponsors_contributors = to_output_string(
       filter_sort(list.append(str_lst_sponsors, str_lst_contributors)),
     )
-    //TODO filter sponsor list here. Contruct fn to return the avatar as well as name and url in the required format
-    //Construct format to generate this output format as a string and append it to the existing output string
+    //NOTE filtering the sponsor list by sponser amount (cents) is done here. 
+    //TODO: Contruct fn to return the avatar_url as well as name and guthub url in the required MD format
+    //Construct fn to generate the filtered sponsors with avatars as a string
+    //and append it to the existing output string
     //TODO this and a case for each api so see what fails?
     Ok(str_sponsors_contributors)
   }
