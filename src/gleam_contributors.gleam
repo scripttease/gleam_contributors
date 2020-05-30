@@ -111,18 +111,20 @@ pub fn list_sponsor_to_list_string(
   |> list.sort(string.compare)
 }
 
-pub fn extract_sponsors_500c(page: Sponsorspage) -> List(String) {
-  let upto_500_list = list.filter(
-    page.sponsor_list,
-    fn(sponsor: Sponsor) { sponsor.cents <= 500 },
+pub fn filter_sponsors(lst: List(Sponsor), dollars) -> List(String) {
+  let cents = dollars * 100
+  let filter_list = list.filter(
+    lst,
+    fn(sponsor: Sponsor) { sponsor.cents >= cents },
   )
 
   list.map(
-    upto_500_list,
+    filter_list,
     fn(sponsor: Sponsor) {
       string.concat(["[", sponsor.name, "]", "(", sponsor.github, ")"])
     },
   )
+  //TODO add lowercase sort
   |> list.sort(string.compare)
 }
 
