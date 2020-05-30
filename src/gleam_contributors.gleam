@@ -108,24 +108,13 @@ pub fn list_sponsor_to_list_string(
       string.concat(["[", sponsor.name, "]", "(", sponsor.github, ")"])
     },
   )
-  |> list.sort(string.compare)
+  |> //TODO add lowercase sort
+  list.sort(string.compare)
 }
 
-pub fn filter_sponsors(lst: List(Sponsor), dollars) -> List(String) {
+pub fn filter_sponsors(lst: List(Sponsor), dollars) -> List(Sponsor) {
   let cents = dollars * 100
-  let filter_list = list.filter(
-    lst,
-    fn(sponsor: Sponsor) { sponsor.cents >= cents },
-  )
-
-  list.map(
-    filter_list,
-    fn(sponsor: Sponsor) {
-      string.concat(["[", sponsor.name, "]", "(", sponsor.github, ")"])
-    },
-  )
-  //TODO add lowercase sort
-  |> list.sort(string.compare)
+  list.filter(lst, fn(sponsor: Sponsor) { sponsor.cents >= cents })
 }
 
 // would be better to use try_decode but its a thruple...
@@ -484,18 +473,13 @@ pub fn call_api_for_contributors(
 
   let contributor_list = list.append(
     contributor_list,
-    contributorpage.contributor_list)
+    contributorpage.contributor_list,
+  )
 
   case contributorpage.nextpage_cursor {
     Ok(cursor) -> {
       let cursor_opt = option.Some(cursor)
-      call_api_for_contributors(
-        token,
-        from,
-        to,
-        cursor_opt,
-        contributor_list,
-      )
+      call_api_for_contributors(token, from, to, cursor_opt, contributor_list)
     }
     _ -> Ok(contributor_list)
   }
@@ -557,7 +541,7 @@ pub fn to_output_string(lst: List(String)) -> String {
 // List(String) formed of whitespace seperated commands to stdin.
 // Top level, handles error-handling
 pub fn main(args: List(String)) -> Nil {
-  // try returns early so they have to be in a let block as this fn returns Nil.
+  // try returns early so we need a let block, otherwise the fn would need t return the result for the try, rather than nil. All of the trys in the let block must have the same error (fail) type for this reason.
   let result = {
     // Parses command line arguments
     try tuple(token, from_version, to_version) = parse_args(args)
@@ -574,19 +558,16 @@ pub fn main(args: List(String)) -> Nil {
       option.None,
       [],
     )
-
+    // TODO extract filter and sort logic from these initial lists
     let str_lst_contributors = list_contributor_to_list_string(contributors)
     //TODO URGENT Add arg here for filtering by amount
     let str_lst_sponsors = list_sponsor_to_list_string(sponsors)
-
-    // let str_contributors = to_output_string(filter_sort(contributors))
-
     let str_sponsors_contributors = to_output_string(
       filter_sort(list.append(str_lst_sponsors, str_lst_contributors)),
     )
-    // this and a case for each api so see what fails?
-    // nb do i need the combine fn still I have the other two
-    // let combo = combine_and_sort_lists_to_string(lst_str_sponsors, contributors)
+    //TODO filter sponsor list here. Contruct fn to return the avatar as well as name and url in the required format
+    //Construct format to generate this output format as a string and append it to the existing output string
+    //TODO this and a case for each api so see what fails?
     Ok(str_sponsors_contributors)
   }
 
