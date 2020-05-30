@@ -524,6 +524,46 @@ pub fn to_output_string(lst: List(String)) -> String {
   string_out
 }
 
+pub fn construct_repo_query() {
+  "
+  query {
+  organization(login: \"gleam-lang\")
+  {
+    name
+    url
+    repositories (first: 100) {
+      totalCount
+      nodes {
+        name
+      }
+    }
+  }
+}
+  "
+// "
+// {
+//   organization(login: \"gleam-lang\") {
+//     repositories {
+//       ... on RepositoryConnection {
+//         pageInfo {
+//           endCursor
+//         }
+//         nodes {
+//           name
+//         }
+//       }
+//     }
+//   }
+// }"
+}
+
+pub fn call_api_for_repos(token: String) -> Result(String, String) {
+
+  let query = construct_repo_query()
+
+  call_api(token, query)
+}
+
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
 // List(String) formed of whitespace seperated commands to stdin.
 // Top level, handles error-handling
@@ -557,13 +597,18 @@ pub fn main(args: List(String)) -> Nil {
     //TODO: Contruct fn to return the avatar_url as well as name and guthub url in the required MD format
     //Construct fn to generate the filtered sponsors with avatars as a string
     //and append it to the existing output string
-    //TODO this and a case for each api so see what fails?
-    Ok(str_sponsors_contributors)
+
+
+
+    try stuff = call_api_for_repos(token)
+
+    // Ok(str_sponsors_contributors)
+    Ok(stuff)
   }
 
   case result {
-    Ok(str_sponsors_contributors) -> {
-      io.print(str_sponsors_contributors)
+    Ok(stuff) -> {
+      io.print(stuff)
       io.println("Done!")
     }
     Error(e) -> io.println(e)

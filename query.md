@@ -245,3 +245,21 @@ query releasedate($version: String!) {
 }
 ```
 
+## Repository name query
+
+```graphql
+{
+  organization(login: "Gleam") {
+    repositories {
+      ... on RepositoryConnection {
+        pageInfo {
+          endCursor
+        }
+        nodes {
+          name
+        }
+      }
+    }
+  }
+}
+```
