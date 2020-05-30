@@ -95,7 +95,7 @@ pub fn list_sponsor_to_list_string_test() {
   // let page = Sponsorspage(
   //   nextpage_cursor: Ok("Mg"),
   //   sponsor_list: [
-    let lst = [
+  let lst = [
       Sponsor(
         name: "Chris Young",
         avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
@@ -111,7 +111,6 @@ pub fn list_sponsor_to_list_string_test() {
         cents: 500,
       ),
     ]
-  
   gleam_contributors.list_sponsor_to_list_string(lst)
   |> should.equal(
     [
@@ -325,7 +324,7 @@ pub fn construct_sponsor_query_nonum_result_test() {
 }
 
 pub fn construct_release_query_test() {
-  let version = option.Some("v0.8.0")
+  let version = "v0.8.0"
 
   gleam_contributors.construct_release_query(version)
   |> should.equal(
@@ -367,16 +366,11 @@ pub fn parse_datetime_test() {
 
 pub fn construct_contributor_query_test() {
   let cursor = option.None
-  let from_version = option.Some("2020-03-01T19:22:35Z")
-  let to_version = option.Some("2020-05-07T18:57:47Z")
+  let from = "2020-03-01T19:22:35Z"
+  let to = "2020-05-07T18:57:47Z"
   let count = option.Some("5")
 
-  gleam_contributors.construct_contributor_query(
-    cursor,
-    from_version,
-    to_version,
-    count,
-  )
+  gleam_contributors.construct_contributor_query(cursor, from, to, count)
   |> should.equal(
     "{
   repository(owner: \"gleam-lang\", name: \"gleam\") {

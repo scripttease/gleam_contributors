@@ -99,7 +99,9 @@ pub fn construct_sponsor_query(
   )
 }
 
-pub fn list_sponsor_to_list_string(sponsors_list: List(Sponsor)) -> List(String) {
+pub fn list_sponsor_to_list_string(
+  sponsors_list: List(Sponsor),
+) -> List(String) {
   list.map(
     sponsors_list,
     fn(sponsor: Sponsor) {
@@ -228,9 +230,7 @@ pub fn call_api_for_sponsors(
   try sponsorpage = parse_sponsors(response_json)
 
   // the extract sponsors fn should be taking a sponsor_list not sponsorpage? Is this overwriting?
-  let sponsor_list = list.append(
-    sponsor_list, sponsorpage.sponsor_list)
-  
+  let sponsor_list = list.append(sponsor_list, sponsorpage.sponsor_list)
 
   case sponsorpage.nextpage_cursor {
     Ok(cursor) -> {
@@ -270,11 +270,8 @@ pub type Contributorspage {
 }
 
 // Can this actually be null here?
-pub fn construct_release_query(version: Option(String)) -> String {
-  let use_version = case version {
-    option.Some(version) -> string.concat(["\"", version, "\""])
-    _ -> "null"
-  }
+pub fn construct_release_query(version: String) -> String {
+  let use_version = string.concat(["\"", version, "\""])
 
   string.concat(
     [
@@ -313,8 +310,8 @@ pub fn parse_datetime(json: String) -> Result(String, String) {
 // For this query to get datetimes they CANNOT be null in the API call
 pub fn api_release_datetimes(
   token: String,
-  from_version: Option(String),
-  to_version: Option(String),
+  from_version: String,
+  to_version: String,
 ) -> Result(tuple(String, String), String) {
   let query_from = construct_release_query(from_version)
   let query_to = construct_release_query(to_version)
@@ -333,8 +330,8 @@ pub fn api_release_datetimes(
 //TODO so this needs to call the api...
 pub fn construct_contributor_query(
   cursor: Option(String),
-  from_date: Option(String),
-  to_date: Option(String),
+  from_date: String,
+  to_date: String,
   count: Option(String),
 ) -> String {
   // of use in tests, otherwise 100 results
@@ -343,16 +340,13 @@ pub fn construct_contributor_query(
     _ -> "null"
   }
 
-  let use_from_date = case from_date {
-    option.Some(from_date) -> string.concat(["\"", from_date, "\""])
-    _ -> "null"
-  }
+  let use_from_date = string.concat(["\"", from_date, "\""])
+  let use_to_date = string.concat(["\"", to_date, "\""])
 
-  let use_to_date = case to_date {
-    option.Some(to_date) -> string.concat(["\"", to_date, "\""])
-    _ -> "null"
-  }
-
+  // let use_to_date = case to_date {
+  //   option.Some(to_date) -> string.concat(["\"", to_date, "\""])
+  //   _ -> "null"
+  // }
   let use_count = case count {
     option.Some(count) -> count
     _ -> "100"
@@ -458,29 +452,25 @@ pub fn extract_contributors(page: Contributorspage) -> List(String) {
 
 pub fn call_api_for_contributors(
   token: String,
-  from_version: Option(String),
-  to_version: Option(String),
+  from: String,
+  to: String,
+  // from_version: Option(String),
+  // to_version: Option(String),
   cursor: Option(String),
   contributor_list_md: List(String),
 ) -> Result(List(String), String) {
   //get from and to dates from version numbers
-  let datetimes = api_release_datetimes(token, from_version, to_version)
-  let use_from = case datetimes {
-    Ok(tuple(from, to)) -> from
-    _ -> "null"
-  }
-  let use_to = case datetimes {
-    Ok(tuple(from, to)) -> to
-    _ -> "null"
-  }
-
+  // let datetimes = api_release_datetimes(token, from_version, to_version)
+  // let use_from = case datetimes {
+  //   Ok(tuple(from, to)) -> from
+  //   _ -> "null"
+  // }
+  // let use_to = case datetimes {
+  //   Ok(tuple(from, to)) -> to
+  //   _ -> "null"
+  // }
   //construct contributors query
-  let query = construct_contributor_query(
-    cursor,
-    from_version,
-    to_version,
-    option.None,
-  )
+  let query = construct_contributor_query(cursor, from, to, option.None)
 
   try response_json = call_api(token, query)
 
@@ -497,8 +487,8 @@ pub fn call_api_for_contributors(
       let cursor_opt = option.Some(cursor)
       call_api_for_contributors(
         token,
-        from_version,
-        to_version,
+        from,
+        to,
         cursor_opt,
         contributor_list_md,
       )
@@ -507,21 +497,94 @@ pub fn call_api_for_contributors(
   }
 }
 
+pub fn combine_and_sort_lists_to_string(
+  sponsors: List(String),
+  contributors: List(String),
+) -> String {
+  let combo = list.append(sponsors, contributors)
+  let filtered = set.to_list(set.from_list(combo))
+  //TODO seperate and test ???
+  let case_insensitive_string_compare = fn(a, b) {
+    string.compare(string.lowercase(a), string.lowercase(b))
+  }
+
+  let sorted_filtered = list.sort(filtered, case_insensitive_string_compare)
+
+  let estring = ""
+  let string_combo = list.fold(
+    sorted_filtered,
+    estring,
+    fn(elem, acc) {
+      acc
+      |> string.append("\n")
+      |> string.append(elem)
+    },
+  )
+  io.print("String combo")
+  io.print(string_combo)
+  string_combo
+}
+
+pub fn filter_sort(lst: List(String)) -> List(String) {
+  let filtered = set.to_list(set.from_list(lst))
+  //TODO seperate and test ???
+  let case_insensitive_string_compare = fn(a, b) {
+    string.compare(string.lowercase(a), string.lowercase(b))
+  }
+
+  list.sort(filtered, case_insensitive_string_compare)
+}
+
+pub fn to_output_string(lst: List(String)) -> String {
+  let estring = ""
+  let string_out = list.fold(
+    lst,
+    estring,
+    fn(elem, acc) {
+      acc
+      |> string.append("\n")
+      |> string.append(elem)
+    },
+  )
+  string_out
+}
+
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
 // List(String) formed of whitespace seperated commands to stdin.
 // Top level, handles error-handling
 pub fn main(args: List(String)) -> Nil {
   // try returns early so they have to be in a let block as this fn returns Nil.
   let result = {
+    // Parses command line arguments
     try tuple(token, from_version, to_version) = parse_args(args)
+    // From and to dates from version numbers
+    try datetimes = api_release_datetimes(token, from_version, to_version)
+    let tuple(from, to) = datetimes
+    // Calls API for Sponsors. Returns List(String) if Ok.
     try sponsors = call_api_for_sponsors(token, option.None, [])
-    let sponsor_string_list = list_sponsor_to_list_string(sponsors)
-    Ok(sponsor_string_list)
+    // Calls API for Contributors. Returns List(String) if Ok.
+    try contributors = call_api_for_contributors(
+      token,
+      from,
+      to,
+      option.None,
+      [],
+    )
+    //TODO URGENT Add arg here for filtering by amount
+    let lst_str_sponsors = list_sponsor_to_list_string(sponsors)
+    let str_sponsors_contributors = to_output_string(
+      filter_sort(list.append(lst_str_sponsors, contributors)),
+    )
+    let str_contributors = to_output_string(filter_sort(contributors))
+    // this and a case for each api so see what fails?
+    // nb do i need the combine fn still I have the other two
+    let combo = combine_and_sort_lists_to_string(lst_str_sponsors, contributors)
+    Ok(combo)
   }
 
   case result {
-    Ok(sponsors) -> {
-      io.debug(sponsors)
+    Ok(combo) -> {
+      io.print(combo)
       io.println("Done!")
     }
     Error(e) -> io.println(e)
