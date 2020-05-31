@@ -550,7 +550,7 @@ pub fn construct_repo_query() -> String {
   {
     name
     url
-    repositories (first: 100) {
+    repositories(first: 100, isFork: false) {
       totalCount
       nodes {
         name
