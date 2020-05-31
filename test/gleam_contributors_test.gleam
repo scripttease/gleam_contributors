@@ -400,8 +400,10 @@ pub fn construct_contributor_query_test() {
   let from = "2020-03-01T19:22:35Z"
   let to = "2020-05-07T18:57:47Z"
   let count = option.Some("5")
+  let org = "gleam-lang"
+  let repo_name = "gleam"
 
-  gleam_contributors.construct_contributor_query(cursor, from, to, count)
+  gleam_contributors.construct_contributor_query(cursor, from, to, count, org, repo_name)
   |> should.equal(
     "{
   repository(owner: \"gleam-lang\", name: \"gleam\") {

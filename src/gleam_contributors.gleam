@@ -258,6 +258,10 @@ pub type Contributorspage {
   )
 }
 
+pub type Repo {
+  Repo(org: String, name: String)
+}
+
 // Constructs query to API to get the release datetime from the given version
 pub fn construct_release_query(version: String) -> String {
   let use_version = string.concat(["\"", version, "\""])
@@ -320,7 +324,10 @@ pub fn construct_contributor_query(
   from_date: String,
   to_date: String,
   count: Option(String),
+  org: String,
+  repo_name: String,
 ) -> String {
+
   let use_cursor = case cursor {
     option.Some(cursor) -> string.concat(["\"", cursor, "\""])
     _ -> "null"
@@ -335,10 +342,13 @@ pub fn construct_contributor_query(
     _ -> "100"
   }
 
+  let use_org = string.concat(["\"", org, "\""])
+  let use_repo_name = string.concat(["\"", repo_name, "\""])
+
   string.concat(
     [
       "{
-  repository(owner: \"gleam-lang\", name: \"gleam\") {
+  repository(owner: ", use_org, ", name: ", use_repo_name, ") {
     object(expression: \"master\") {
       ... on Commit {
         history(since: ",
@@ -447,8 +457,12 @@ pub fn call_api_for_contributors(
   to: String,
   cursor: Option(String),
   contributor_list: List(Contributor),
+  org: String,
+  repo_name: String,
 ) -> Result(List(Contributor), String) {
-  let query = construct_contributor_query(cursor, from, to, option.None)
+
+  let query = construct_contributor_query(cursor, from, to, option.None, org, repo_name)
+  // let query_list = list.map(repo_list, fn(repo) { construct_contributor_query(cursor, from, to, option.None, repo.org, repo.name)})
 
   try response_json = call_api(token, query)
 
@@ -462,7 +476,7 @@ pub fn call_api_for_contributors(
   case contributorpage.nextpage_cursor {
     Ok(cursor) -> {
       let cursor_opt = option.Some(cursor)
-      call_api_for_contributors(token, from, to, cursor_opt, contributor_list)
+      call_api_for_contributors(token, from, to, cursor_opt, contributor_list, org, repo_name)
     }
     _ -> Ok(contributor_list)
   }
@@ -524,32 +538,37 @@ pub fn to_output_string(lst: List(String)) -> String {
   string_out
 }
 
+
+
 // Add nextpage cursor for when repos exceed 100 results
-pub fn parse_repos(repos_json: String) -> Result(List(String), String) {
+pub fn parse_repos(repos_json: String, org_n: String) -> Result(List(Repo), String) {
   let res = decode_json_from_string(repos_json)
   try data = dynamic.field(res, "data")
   try org = dynamic.field(data, "organization")
   try repos = dynamic.field(org, "repositories")
   try nodes = dynamic.field(repos, "nodes")
   //dynamic.list needs to take a fn
-  try repo_list = dynamic.list(
+  try repo_string_list = dynamic.list(
     nodes,
     fn(repo) {
       try dynamic_name = dynamic.field(repo, "name")
       dynamic.string(dynamic_name)
     },
   )
-  io.debug("repo_list from parse_repos")
-  io.debug(repo_list)
 
-  Ok(repo_list)
+  let list_repo = list.map(repo_string_list, fn(string) {
+    Repo(org: org_n, name: string)
+  })
+
+  Ok(list_repo)
 }
 
 // TODO take org option for gleam-experiments
-pub fn construct_repo_query() -> String {
-  "
+pub fn construct_repo_query(org: String) -> String {
+  string.concat([
+    "
   query {
-  organization(login: \"gleam-lang\")
+  organization(login: \"", org, "\")
   {
     name
     url
@@ -562,15 +581,26 @@ pub fn construct_repo_query() -> String {
   }
 }
   "
+   ])
 }
 
-pub fn call_api_for_repos(token: String) -> Result(List(String), String) {
-  let query = construct_repo_query()
+pub fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
+  //TODO add arg to construct_repo_query
+  //TODO this pattern is ugly. Fix it
+  let org1 = "gleam-lang"
+  let org2 = "gleam-experiments"
 
-  try response_json = call_api(token, query)
-  try list_repos = parse_repos(response_json)
+  let query1 = construct_repo_query(org1)
+  try response_json1 = call_api(token, query1)
+  try repo_list1 = parse_repos(response_json1, org1)
 
-  Ok(list_repos)
+  let query2 = construct_repo_query(org2)
+  try response_json2 = call_api(token, query2)
+  try repo_list2 = parse_repos(response_json2, org2)
+
+  let repo_list = list.append(repo_list1, repo_list2)
+
+  Ok(repo_list)
 }
 
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
@@ -590,30 +620,37 @@ pub fn main(args: List(String)) -> Nil {
     // Calls API for Sponsors. Returns List(String) if Ok.
     try sponsors = call_api_for_sponsors(token, option.None, [])
     // Calls API for Contributors. Returns List(String) if Ok.
-    try contributors = call_api_for_contributors(
-      token,
-      from,
-      to,
-      option.None,
-      [],
-    )
-    let str_lst_contributors = list_contributor_to_list_string(contributors)
+    // try contributors = call_api_for_contributors(
+    //   token,
+    //   from,
+    //   to,
+    //   option.None,
+    //   [],
+    // )
+
+    // let str_lst_contributors = list_contributor_to_list_string(contributors)
     let str_lst_sponsors = list_sponsor_to_list_string(sponsors)
-    let str_sponsors_contributors = to_output_string(
-      filter_sort(list.append(str_lst_sponsors, str_lst_contributors)),
-    )
+    // let str_sponsors_contributors = to_output_string(
+    //   filter_sort(list.append(str_lst_sponsors, str_lst_contributors)),
+    // )
     //NOTE filtering the sponsor list by sponser amount (cents) is done here. 
     //TODO: Contruct fn to return the avatar_url as well as name and guthub url in the required MD format
     //Construct fn to generate the filtered sponsors with avatars as a string
     //and append it to the existing output string
-    try stuff = call_api_for_repos(token)
+
+    //Returns List(Repo)
+    try list_repos = call_api_for_repos(token)
+
+    try acc_list_contributors = list.traverse(list_repos, fn(repo: Repo) {
+      call_api_for_contributors(token, from, to, option.None, [], repo.org, repo.name)
+    })
     // Ok(str_sponsors_contributors)
-    Ok(stuff)
+    Ok(acc_list_contributors)
   }
 
   case result {
-    Ok(stuff) -> {
-      io.debug(stuff)
+    Ok(list_repos) -> {
+      io.debug(list_repos)
       io.println("Done!")
     }
     Error(e) -> io.println(e)
