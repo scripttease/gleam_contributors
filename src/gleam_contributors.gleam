@@ -9,7 +9,7 @@ import gleam/set.{Set}
 import gleam/list
 import gleam/int
 import gleam/io
-import gleam/option.{Option}
+import gleam/option.{Option, Some, None}
 
 pub external type OkAtom
 
@@ -197,6 +197,7 @@ pub fn call_api(token: String, query: String) -> Result(String, String) {
   // TODO error(e) 
   let response = case result {
     Ok(response) -> {
+      io.println(query)
       io.println(response.body)
       Ok(response.body)
     }
@@ -247,7 +248,7 @@ pub fn parse_args(
 }
 
 pub type Contributor {
-  Contributor(name: String, github: String)
+  Contributor(name: String, github: Option(String))
 }
 
 // Could include avatarURl and websiteUrl if required
@@ -327,7 +328,6 @@ pub fn construct_contributor_query(
   org: String,
   repo_name: String,
 ) -> String {
-
   let use_cursor = case cursor {
     option.Some(cursor) -> string.concat(["\"", cursor, "\""])
     _ -> "null"
@@ -348,7 +348,11 @@ pub fn construct_contributor_query(
   string.concat(
     [
       "{
-  repository(owner: ", use_org, ", name: ", use_repo_name, ") {
+  repository(owner: ",
+      use_org,
+      ", name: ",
+      use_repo_name,
+      ") {
     object(expression: \"master\") {
       ... on Commit {
         history(since: ",
@@ -389,11 +393,15 @@ pub fn construct_contributor_query(
 pub fn decode_contributor(json_obj: Dynamic) -> Result(Contributor, String) {
   try author = dynamic.field(json_obj, "author")
   try dynamic_name = dynamic.field(author, "name")
-  try user = dynamic.field(author, "user")
-  try dynamic_github = dynamic.field(user, "url")
-
   try name = dynamic.string(dynamic_name)
-  try github = dynamic.string(dynamic_github)
+
+  let github = option.from_result(
+    {
+      try user = dynamic.field(author, "user")
+      try dynamic_github = dynamic.field(user, "url")
+      dynamic.string(dynamic_github)
+    },
+  )
 
   Ok(Contributor(name: name, github: github))
 }
@@ -440,7 +448,10 @@ pub fn list_contributor_to_list_string(lst: List(Contributor)) -> List(String) {
   let initial_list = list.map(
     lst,
     fn(contributor: Contributor) {
-      string.concat(["[", contributor.name, "](", contributor.github, ")"])
+      case contributor.github {
+        Some(url) -> string.concat(["[", contributor.name, "](", url, ")"])
+        None -> contributor.name
+      }
     },
   )
   //TODO add string compare lowercase
@@ -460,10 +471,16 @@ pub fn call_api_for_contributors(
   org: String,
   repo_name: String,
 ) -> Result(List(Contributor), String) {
+  let query = construct_contributor_query(
+    cursor,
+    from,
+    to,
+    option.None,
+    org,
+    repo_name,
+  )
 
-  let query = construct_contributor_query(cursor, from, to, option.None, org, repo_name)
   // let query_list = list.map(repo_list, fn(repo) { construct_contributor_query(cursor, from, to, option.None, repo.org, repo.name)})
-
   try response_json = call_api(token, query)
 
   try contributorpage = parse_contributors(response_json)
@@ -476,7 +493,15 @@ pub fn call_api_for_contributors(
   case contributorpage.nextpage_cursor {
     Ok(cursor) -> {
       let cursor_opt = option.Some(cursor)
-      call_api_for_contributors(token, from, to, cursor_opt, contributor_list, org, repo_name)
+      call_api_for_contributors(
+        token,
+        from,
+        to,
+        cursor_opt,
+        contributor_list,
+        org,
+        repo_name,
+      )
     }
     _ -> Ok(contributor_list)
   }
@@ -538,10 +563,11 @@ pub fn to_output_string(lst: List(String)) -> String {
   string_out
 }
 
-
-
 // Add nextpage cursor for when repos exceed 100 results
-pub fn parse_repos(repos_json: String, org_n: String) -> Result(List(Repo), String) {
+pub fn parse_repos(
+  repos_json: String,
+  org_n: String,
+) -> Result(List(Repo), String) {
   let res = decode_json_from_string(repos_json)
   try data = dynamic.field(res, "data")
   try org = dynamic.field(data, "organization")
@@ -556,19 +582,23 @@ pub fn parse_repos(repos_json: String, org_n: String) -> Result(List(Repo), Stri
     },
   )
 
-  let list_repo = list.map(repo_string_list, fn(string) {
-    Repo(org: org_n, name: string)
-  })
+  let list_repo = list.map(
+    repo_string_list,
+    fn(string) { Repo(org: org_n, name: string) },
+  )
 
   Ok(list_repo)
 }
 
 // TODO take org option for gleam-experiments
 pub fn construct_repo_query(org: String) -> String {
-  string.concat([
-    "
+  string.concat(
+    [
+      "
   query {
-  organization(login: \"", org, "\")
+  organization(login: \"",
+      org,
+      "\")
   {
     name
     url
@@ -580,8 +610,9 @@ pub fn construct_repo_query(org: String) -> String {
     }
   }
 }
-  "
-   ])
+  ",
+    ],
+  )
 }
 
 pub fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
@@ -627,30 +658,42 @@ pub fn main(args: List(String)) -> Nil {
     //   option.None,
     //   [],
     // )
-
-    // let str_lst_contributors = list_contributor_to_list_string(contributors)
     let str_lst_sponsors = list_sponsor_to_list_string(sponsors)
-    // let str_sponsors_contributors = to_output_string(
-    //   filter_sort(list.append(str_lst_sponsors, str_lst_contributors)),
-    // )
     //NOTE filtering the sponsor list by sponser amount (cents) is done here. 
     //TODO: Contruct fn to return the avatar_url as well as name and guthub url in the required MD format
     //Construct fn to generate the filtered sponsors with avatars as a string
     //and append it to the existing output string
-
     //Returns List(Repo)
     try list_repos = call_api_for_repos(token)
-
-    try acc_list_contributors = list.traverse(list_repos, fn(repo: Repo) {
-      call_api_for_contributors(token, from, to, option.None, [], repo.org, repo.name)
-    })
+    //IMPORTANT traverse is for a result or list where map would have given a list of results. IT MIGHT CHANGE TO BE CALLED MAP_WHILE!
+    try acc_list_contributors = list.traverse(
+      list_repos,
+      fn(repo: Repo) {
+        call_api_for_contributors(
+          token,
+          from,
+          to,
+          option.None,
+          [],
+          repo.org,
+          repo.name,
+        )
+      },
+    )
+    // let str_lst_contributors = list_contributor_to_list_string(acc_list_contributors)
+    // let str_sponsors_contributors = to_output_string(
+    //   filter_sort(list.append(str_lst_sponsors, str_lst_contributors)),
+    // )
+    //TODO IMPORTANT add a line with sponsors only and sponsors filtered
     // Ok(str_sponsors_contributors)
     Ok(acc_list_contributors)
   }
 
   case result {
-    Ok(list_repos) -> {
-      io.debug(list_repos)
+    Ok(acc_list_contributors) -> {
+      // Ok(str_sponsors_contributors) -> {
+      // io.debug(str_sponsors_contributors)
+      io.debug(acc_list_contributors)
       io.println("Done!")
     }
     Error(e) -> io.println(e)

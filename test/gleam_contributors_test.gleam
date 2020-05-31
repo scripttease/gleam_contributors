@@ -1,6 +1,6 @@
 import gleam_contributors.{Sponsorspage, Sponsor}
 import gleam_contributors.{Contributorspage, Contributor}
-import gleam/option.{Option}
+import gleam/option.{Option, Some, None}
 import gleam/should
 import gleam/set.{Set}
 
@@ -403,7 +403,14 @@ pub fn construct_contributor_query_test() {
   let org = "gleam-lang"
   let repo_name = "gleam"
 
-  gleam_contributors.construct_contributor_query(cursor, from, to, count, org, repo_name)
+  gleam_contributors.construct_contributor_query(
+    cursor,
+    from,
+    to,
+    count,
+    org,
+    repo_name,
+  )
   |> should.equal(
     "{
   repository(owner: \"gleam-lang\", name: \"gleam\") {
@@ -530,16 +537,25 @@ pub fn parse_contributors_test() {
       Contributorspage(
         nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
         contributor_list: [
-          Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
+          Contributor(
+            name: "Louis Pilfold",
+            github: Some("https://github.com/lpil"),
+          ),
           Contributor(
             name: "Tom Whatmore",
-            github: "https://github.com/tomwhatmore",
+            github: Some("https://github.com/tomwhatmore"),
           ),
-          Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
-          Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
+          Contributor(
+            name: "Louis Pilfold",
+            github: Some("https://github.com/lpil"),
+          ),
+          Contributor(
+            name: "Louis Pilfold",
+            github: Some("https://github.com/lpil"),
+          ),
           Contributor(
             name: "Quinn Wilton",
-            github: "https://github.com/QuinnWilton",
+            github: Some("https://github.com/QuinnWilton"),
           ),
         ],
       ),
@@ -559,16 +575,25 @@ pub fn list_contributor_to_list_string_test() {
   //   nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
   //   contributor_list: [
   let lst = [
-      Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
+      Contributor(
+        name: "Louis Pilfold",
+        github: Some("https://github.com/lpil"),
+      ),
       Contributor(
         name: "Tom Whatmore",
-        github: "https://github.com/tomwhatmore",
+        github: Some("https://github.com/tomwhatmore"),
       ),
-      Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
-      Contributor(name: "Louis Pilfold", github: "https://github.com/lpil"),
+      Contributor(
+        name: "Louis Pilfold",
+        github: Some("https://github.com/lpil"),
+      ),
+      Contributor(
+        name: "Louis Pilfold",
+        github: Some("https://github.com/lpil"),
+      ),
       Contributor(
         name: "Quinn Wilton",
-        github: "https://github.com/QuinnWilton",
+        github: Some("https://github.com/QuinnWilton"),
       ),
     ]
 
