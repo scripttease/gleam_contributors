@@ -314,7 +314,7 @@ pub fn call_api_for_datetimes(
   Ok(tuple(from_datetime, to_datetime))
 }
 
-//TODO make request to gleam-experiments
+// TODO URGENT Add options for org and repo
 pub fn construct_contributor_query(
   cursor: Option(String),
   from_date: String,
@@ -524,7 +524,26 @@ pub fn to_output_string(lst: List(String)) -> String {
   string_out
 }
 
-pub fn construct_repo_query() {
+// Add nextpage cursor for when repos exceed 100 results
+pub fn parse_repos(repos_json: String) -> Result(List(String), String) {
+
+  let res = decode_json_from_string(repos_json)
+  try data = dynamic.field(res, "data")
+  try org = dynamic.field(data, "organization")
+  try repos = dynamic.field(org, "repositories")
+  try nodes = dynamic.field(repos, "nodes")
+  //dynamic.list needs to take a fn
+  try repo_list = dynamic.list(nodes, fn(repo) {
+    try dynamic_name = dynamic.field(repo, "name")
+    dynamic.string(dynamic_name)
+  })
+  io.debug("repo_list from parse_repos")
+  io.debug(repo_list)
+
+  Ok(repo_list)
+}
+// TODO take org option for gleam-experiments
+pub fn construct_repo_query() -> String {
   "
   query {
   organization(login: \"gleam-lang\")
@@ -540,34 +559,23 @@ pub fn construct_repo_query() {
   }
 }
   "
-// "
-// {
-//   organization(login: \"gleam-lang\") {
-//     repositories {
-//       ... on RepositoryConnection {
-//         pageInfo {
-//           endCursor
-//         }
-//         nodes {
-//           name
-//         }
-//       }
-//     }
-//   }
-// }"
 }
 
-pub fn call_api_for_repos(token: String) -> Result(String, String) {
+pub fn call_api_for_repos(token: String) -> Result(List(String), String) {
 
   let query = construct_repo_query()
 
-  call_api(token, query)
+   try response_json = call_api(token, query)
+   try list_repos = parse_repos(response_json)
+
+   Ok(list_repos)
 }
 
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
 // List(String) formed of whitespace seperated commands to stdin.
 // Top level, handles error-handling
 pub fn main(args: List(String)) -> Nil {
+
   // Try returns early so we need a let block, otherwise the whole fn would need
   // to return the same type as the result for the try, rather than nil. All of
   // the trys in the let block must have the same error (failure mode/message)
@@ -608,7 +616,7 @@ pub fn main(args: List(String)) -> Nil {
 
   case result {
     Ok(stuff) -> {
-      io.print(stuff)
+      io.debug(stuff)
       io.println("Done!")
     }
     Error(e) -> io.println(e)
