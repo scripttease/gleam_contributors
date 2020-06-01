@@ -1,6 +1,6 @@
 # gleam_contributors
 
-A Gleam program
+A Gleam program that queries the Github v4 GraphQL API to request the [Gleam](https://github.com/gleam-lang) project's list of contributors and sponsors.
 
 
 ## Quick start
@@ -12,41 +12,27 @@ rebar3 compile
 # Run the eunit tests
 rebar3 eunit
 
-# Run the Erlang REPL
+# Run to enable escriptize IO commandline tooling
+rebar3 escriptize
+
+# Run the program!
+_build/default/bin/gleam_contributors $TOKEN $FROM_VERSION $TO_VERSION
+
+# Run the Erlang REPL (If required for debugging)
 rebar3 shell
 ```
 
 
-## Command-line tooling
+## Escriptize Usage
 
-Use escriptize:
-
-```sh
-rebar3 escriptize
-```
-
-This creates an executable file:
+Running Escriptize creates an executable file:
 
 `_build/default/bin/my_project_name` which requires a fn `main` as the entrypoint 
 
-To make the api request, follow the filename by your github api token, generated with the necessary permissions:
+To make the api request, follow the filename by your [github api token](https://help.github.com/en/github/authenticating-to-github/creating-a-personal-access-token-for-the-command-line), generated with the necessary permissions.
 
 ```sh
-_build/default/bin/my_project_name my-api-token
+_build/default/bin/my_project_name $TOKEN $FROM_VERSION $TO_VERSION
 ```
 
-The following must also be inculded in `deps` in `rebar.config`:
-
-```conf
-{deps, [
-    {gleam_stdlib, "0.8.0"},
-    {gleam_httpc, {git, "https://github.com/gleam-experiments/httpc"}},
-    jsone
-]}.
-```
-
-The following must be included in the `applications` list in `my_project_name.app.src`:
-
-`gleam_httpc, ssl, inets, jsone`
-
-These erlang tools and the Application (named) need to be started in the entry point function `main` in order for the command line tooling to work with inets ssl etc.
+Note that $TO_VERSION is optional, and will default to the current datetime if not given.
