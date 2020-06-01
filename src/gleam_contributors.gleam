@@ -1,4 +1,5 @@
-// To add an Erlang library, add deps to rebar.config.
+// Import Gleam StdLib modules here.
+// To add an Erlang library, add deps to rebar.config. To use them create an external fn.
 import gleam/result
 import gleam/dynamic.{Dynamic}
 import gleam/httpc.{Text, Response}
@@ -164,7 +165,7 @@ pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
   try dynamic_nextpage = dynamic.field(page, "hasNextPage")
   try nextpage = dynamic.bool(dynamic_nextpage)
 
-  // TODO error message?
+  // TODO error message string?
   let cursor = case nextpage {
     False -> Error(Nil)
     True -> dynamic.field(page, "endCursor")
@@ -174,12 +175,14 @@ pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
       result.map_error(fn(_) { Nil })
   }
 
+  // TODO There is a bug in the formatter here, as it puts comments after pipes. Can fix in compiler
   try nodes = dynamic.field(spons, "nodes")
   try sponsors = dynamic.list(nodes, decode_sponsor)
 
   Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
 }
 
+// Calls the Github API v4 (GraphQL)
 pub fn call_api(token: String, query: String) -> Result(String, String) {
   io.debug(start_application_and_deps(GleamContributors))
 
@@ -319,7 +322,6 @@ pub fn call_api_for_datetimes(
   Ok(tuple(from_datetime, to_datetime))
 }
 
-// TODO URGENT Add options for org and repo
 pub fn construct_contributor_query(
   cursor: Option(String),
   from_date: String,
@@ -443,7 +445,6 @@ pub fn remove_duplicates(slist: List(String)) -> Set(String) {
   )
 }
 
-//TODO: can abstract this to work for sponsor as well as contributor 'record' if there is a way of grouping types and I give  the lists the same field name
 pub fn list_contributor_to_list_string(lst: List(Contributor)) -> List(String) {
   let initial_list = list.map(
     lst,
@@ -455,8 +456,6 @@ pub fn list_contributor_to_list_string(lst: List(Contributor)) -> List(String) {
     },
   )
 
-  // io.debug("INIT LIST")
-  // io.debug(initial_list)
   //TODO can the filter and sort be handled later or is here best?
   let case_insensitive_string_compare = fn(a, b) {
     string.compare(string.lowercase(a), string.lowercase(b))
@@ -464,12 +463,8 @@ pub fn list_contributor_to_list_string(lst: List(Contributor)) -> List(String) {
 
   let sorted = list.sort(initial_list, case_insensitive_string_compare)
 
-  let final = remove_duplicates(sorted)
-    |> set.to_list
-
-  // io.debug("FINAL")
-  // io.debug(final)
-  final
+  remove_duplicates(sorted)
+  |> set.to_list
 }
 
 pub fn call_api_for_contributors(
@@ -490,7 +485,6 @@ pub fn call_api_for_contributors(
     repo_name,
   )
 
-  // let query_list = list.map(repo_list, fn(repo) { construct_contributor_query(cursor, from, to, option.None, repo.org, repo.name)})
   try response_json = call_api(token, query)
 
   try contributorpage = parse_contributors(response_json)
@@ -513,9 +507,7 @@ pub fn call_api_for_contributors(
         repo_name,
       )
     }
-    _ -> // io.debug("CONT LIST")
-    // io.debug(Ok(contributor_list))
-    Ok(contributor_list)
+    _ -> Ok(contributor_list)
   }
 }
 
@@ -561,6 +553,7 @@ pub fn filter_sort(lst: List(String)) -> List(String) {
 // create a single string in the desired format. Sorting and filtering cannot be
 // done on the string so they must be done first.
 //TODO add dates at top. Add filtered sponsors
+// Add - at beginning of line
 pub fn to_output_string(lst: List(String)) -> String {
   let estring = ""
   let string_out = list.fold(
@@ -575,7 +568,7 @@ pub fn to_output_string(lst: List(String)) -> String {
   string_out
 }
 
-// Add nextpage cursor for when repos exceed 100 results
+// TODO Add nextpage cursor for when number of repos exceed 100 results
 pub fn parse_repos(
   repos_json: String,
   org_n: String,
@@ -628,7 +621,6 @@ pub fn construct_repo_query(org: String) -> String {
 }
 
 pub fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
-  //TODO add arg to construct_repo_query
   //TODO this pattern is ugly. Fix it
   let org1 = "gleam-lang"
   let org2 = "gleam-experiments"
@@ -662,17 +654,9 @@ pub fn main(args: List(String)) -> Nil {
     let tuple(from, to) = datetimes
     // Calls API for Sponsors. Returns List(String) if Ok.
     try sponsors = call_api_for_sponsors(token, option.None, [])
-    // Calls API for Contributors. Returns List(String) if Ok.
-    // try contributors = call_api_for_contributors(
-    //   token,
-    //   from,
-    //   to,
-    //   option.None,
-    //   [],
-    // )
     let str_lst_sponsors = list_sponsor_to_list_string(sponsors)
     //NOTE filtering the sponsor list by sponser amount (cents) is done here. 
-    //TODO: Contruct fn to return the avatar_url as well as name and guthub url in the required MD format
+    //TODO: Construct fn to return the avatar_url as well as name and guthub url in the required MD format
     //Construct fn to generate the filtered sponsors with avatars as a string
     //and append it to the existing output string
     //Returns List(Repo)
@@ -693,10 +677,10 @@ pub fn main(args: List(String)) -> Nil {
       },
     )
     let flat_contributors = list.flatten(acc_list_contributors)
-    // let str_lst_contributors = to_output_string(list_contributor_to_list_string(flat_contributors))
     let str_lst_contributors = list_contributor_to_list_string(
       flat_contributors,
     )
+    // Combines all sponsors and all contributors
     let str_sponsors_contributors = to_output_string(
       filter_sort(list.append(str_lst_sponsors, str_lst_contributors)),
     )
@@ -704,12 +688,9 @@ pub fn main(args: List(String)) -> Nil {
     Ok(str_sponsors_contributors)
   }
 
-  // Ok(acc_list_contributors)
   case result {
-    // Ok(acc_list_contributors) -> {
     Ok(str_sponsors_contributors) -> {
       io.print(str_sponsors_contributors)
-      // io.debug(acc_list_contributors)
       io.println("Done!")
     }
     Error(e) -> io.println(e)
