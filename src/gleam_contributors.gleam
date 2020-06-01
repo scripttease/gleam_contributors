@@ -454,10 +454,10 @@ pub fn list_contributor_to_list_string(lst: List(Contributor)) -> List(String) {
       }
     },
   )
+
   // io.debug("INIT LIST")
   // io.debug(initial_list)
   //TODO can the filter and sort be handled later or is here best?
-
   let case_insensitive_string_compare = fn(a, b) {
     string.compare(string.lowercase(a), string.lowercase(b))
   }
@@ -465,7 +465,7 @@ pub fn list_contributor_to_list_string(lst: List(Contributor)) -> List(String) {
   let sorted = list.sort(initial_list, case_insensitive_string_compare)
 
   let final = remove_duplicates(sorted)
-  |> set.to_list
+    |> set.to_list
 
   // io.debug("FINAL")
   // io.debug(final)
@@ -513,11 +513,9 @@ pub fn call_api_for_contributors(
         repo_name,
       )
     }
-    _ -> {
-    // io.debug("CONT LIST")
+    _ -> // io.debug("CONT LIST")
     // io.debug(Ok(contributor_list))
-      Ok(contributor_list)
-    }
+    Ok(contributor_list)
   }
 }
 
@@ -694,24 +692,22 @@ pub fn main(args: List(String)) -> Nil {
         )
       },
     )
-
     let flat_contributors = list.flatten(acc_list_contributors)
-
     // let str_lst_contributors = to_output_string(list_contributor_to_list_string(flat_contributors))
-    let str_lst_contributors = list_contributor_to_list_string(flat_contributors)
-
-
+    let str_lst_contributors = list_contributor_to_list_string(
+      flat_contributors,
+    )
     let str_sponsors_contributors = to_output_string(
       filter_sort(list.append(str_lst_sponsors, str_lst_contributors)),
     )
     //TODO IMPORTANT add a line with sponsors only and sponsors filtered
     Ok(str_sponsors_contributors)
-    // Ok(acc_list_contributors)
   }
 
+  // Ok(acc_list_contributors)
   case result {
     // Ok(acc_list_contributors) -> {
-      Ok(str_sponsors_contributors) -> {
+    Ok(str_sponsors_contributors) -> {
       io.print(str_sponsors_contributors)
       // io.debug(acc_list_contributors)
       io.println("Done!")

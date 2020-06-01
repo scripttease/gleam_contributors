@@ -606,9 +606,7 @@ pub fn list_contributor_to_list_string_test() {
     ],
   )
 }
-
 // pub fn case_insensitive_contributor_compare_test() {
 //   let contributor_a =
 //   let contributor_b =
-
 // }
