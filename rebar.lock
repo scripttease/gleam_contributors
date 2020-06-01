@@ -11,6 +11,10 @@
   {git,"https://github.com/gleam-lang/stdlib",
        {ref,"64e6bbb11e03945de911561edbcdac3f79a93564"}},
   0},
+ {<<"iso8601">>,
+  {git,"https://github.com/erlsci/iso8601.git",
+       {ref,"fdb0fd12d729c53f4ae6f8c2f893fd6698b8b10e"}},
+  0},
  {<<"jsone">>,{pkg,<<"jsone">>,<<"1.5.2">>},0}]}.
 [
 {pkg_hash,[

@@ -1,5 +1,6 @@
 // Import Gleam StdLib modules here.
-// To add an Erlang library, add deps to rebar.config. To use them create an external fn.
+// To add an Erlang library, add deps to rebar.config, AND require lib in
+// gleam_contributors.app.src To use them create an external fn.
 import gleam/result
 import gleam/dynamic.{Dynamic}
 import gleam/httpc.{Text, Response}
@@ -28,6 +29,17 @@ pub external fn start_application_and_deps(Application) -> OkAtom =
 external fn encode_json(a) -> String =
   "jsone" "encode"
 
+//Erlang library for datetime 
+external fn current_time() -> tuple(Int, Int, Int) =
+  "calendar" "universal_time"
+
+external fn iso_format(tuple(Int, Int, Int)) -> String =
+  "iso8601" "format"
+
+// TODO convert to try_decode OR check for valid json response.
+external fn decode_json_from_string(String) -> Dynamic =
+  "jsone" "decode"
+
 //Creates type to interrogate response to sponsor query
 pub type Sponsor {
   Sponsor(
@@ -48,6 +60,100 @@ pub type Sponsorspage {
     nextpage_cursor: Result(String, Nil),
     sponsor_list: List(Sponsor),
   )
+}
+
+// Calls the Github API v4 (GraphQL)
+pub fn call_api(token: String, query: String) -> Result(String, String) {
+  io.debug(start_application_and_deps(GleamContributors))
+
+  let json = map.from_list([tuple("query", query)])
+
+  let result = httpc.request(
+    method: Post,
+    url: "https://api.github.com/graphql",
+    headers: [
+      tuple("Authorization", string.append("bearer ", token)),
+      tuple("User-Agent", "gleam contributors"),
+    ],
+    body: Text("application/json", encode_json(json)),
+  )
+  // TODO error(e) 
+  let response = case result {
+    Ok(response) -> {
+      io.println(query)
+      io.println(response.body)
+      Ok(response.body)
+    }
+    Error(e) -> {
+      io.debug(e)
+      Error("There was an error during the POST request :(\n")
+    }
+  }
+  response
+}
+
+pub fn construct_release_query(version: String) -> String {
+  let use_version = string.concat(["\"", version, "\""])
+
+  string.concat(
+    [
+      "{
+  repository(name: \"gleam\", owner: \"gleam-lang\") {
+    release(tagName: ",
+      use_version,
+      ") {
+      tag {
+        target {
+          ... on Commit {
+            committedDate
+          }
+        }
+      }
+    }
+  }
+}",
+    ],
+  )
+}
+
+// Constructs query to API to get the release datetime from the given version
+//Converts response json.
+pub fn parse_datetime(json: String) -> Result(String, String) {
+  let res = decode_json_from_string(json)
+  try data = dynamic.field(res, "data")
+  try repo = dynamic.field(data, "repository")
+  try release = dynamic.field(repo, "release")
+  try tag = dynamic.field(release, "tag")
+  try target = dynamic.field(tag, "target")
+  try dynamic_date = dynamic.field(target, "committedDate")
+  try date = dynamic.string(dynamic_date)
+
+  Ok(date)
+}
+
+pub fn call_api_for_datetimes(
+  token: String,
+  from_version: String,
+  to_version: Option(String),
+) -> Result(tuple(String, String), String) {
+  try to_datetime = case to_version {
+    Some(to_version) -> {
+      let query_to = construct_release_query(to_version)
+      try response_json = call_api(token, query_to)
+      parse_datetime(response_json)
+    }
+    None -> {
+      io.debug("TEST TIME")
+      io.debug(iso_format(current_time()))
+      Ok(iso_format(current_time()))
+    }
+  }
+
+  let query_from = construct_release_query(from_version)
+  try response_json = call_api(token, query_from)
+  try from_datetime = parse_datetime(response_json)
+
+  Ok(tuple(from_datetime, to_datetime))
 }
 
 //Concatenates optional query params into sponsor query
@@ -121,10 +227,6 @@ pub fn filter_sponsors(lst: List(Sponsor), dollars) -> List(Sponsor) {
   list.filter(lst, fn(sponsor: Sponsor) { sponsor.cents >= cents })
 }
 
-// TODO convert to try_decode OR check for valid json response.
-external fn decode_json_from_string(String) -> Dynamic =
-  "jsone" "decode"
-
 // Decodes sponsor section of the response JSON (List of treemaps)
 pub fn decode_sponsor(json_obj: Dynamic) -> Result(Sponsor, String) {
   try entity = dynamic.field(json_obj, "sponsorEntity")
@@ -182,36 +284,6 @@ pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
   Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
 }
 
-// Calls the Github API v4 (GraphQL)
-pub fn call_api(token: String, query: String) -> Result(String, String) {
-  io.debug(start_application_and_deps(GleamContributors))
-
-  let json = map.from_list([tuple("query", query)])
-
-  let result = httpc.request(
-    method: Post,
-    url: "https://api.github.com/graphql",
-    headers: [
-      tuple("Authorization", string.append("bearer ", token)),
-      tuple("User-Agent", "gleam contributors"),
-    ],
-    body: Text("application/json", encode_json(json)),
-  )
-  // TODO error(e) 
-  let response = case result {
-    Ok(response) -> {
-      io.println(query)
-      io.println(response.body)
-      Ok(response.body)
-    }
-    Error(e) -> {
-      io.debug(e)
-      Error("There was an error during the POST request :(\n")
-    }
-  }
-  response
-}
-
 pub fn call_api_for_sponsors(
   token: String,
   cursor: Option(String),
@@ -239,13 +311,23 @@ pub fn parse_args(
   args: List(String),
 ) -> Result(tuple(String, String, String), String) {
   case args {
-    [
-      token,
-      from_version,
-      to_version,
-    ] -> Ok(tuple(token, from_version, to_version))
+    [token, from_version, to_version] -> {
+      // From and to dates from version numbers
+      try datetimes = call_api_for_datetimes(
+        token,
+        from_version,
+        Some(to_version),
+      )
+      let tuple(from, to) = datetimes
+      Ok(tuple(token, from, to))
+    }
+    [token, from_version] -> {
+      try datetimes = call_api_for_datetimes(token, from_version, None)
+      let tuple(from, to) = datetimes
+      Ok(tuple(token, from, to))
+    }
     _ -> Error(
-      "Usage: _buildfilename $TOKEN $FROM_VESRION $TO_VESRION \n(Version should be in format `v0.3.0`)",
+      "Usage: _buildfilename $TOKEN $FROM_VERSION $TO_VESRION \nVersion should be in format `v0.3.0` \n $TO_VERSION is optional and if omitted, records will be retrieved up to the current datetime.",
     )
   }
 }
@@ -264,62 +346,6 @@ pub type Contributorspage {
 
 pub type Repo {
   Repo(org: String, name: String)
-}
-
-// Constructs query to API to get the release datetime from the given version
-pub fn construct_release_query(version: String) -> String {
-  let use_version = string.concat(["\"", version, "\""])
-
-  string.concat(
-    [
-      "{
-  repository(name: \"gleam\", owner: \"gleam-lang\") {
-    release(tagName: ",
-      use_version,
-      ") {
-      tag {
-        target {
-          ... on Commit {
-            committedDate
-          }
-        }
-      }
-    }
-  }
-}",
-    ],
-  )
-}
-
-//Converts response json.
-pub fn parse_datetime(json: String) -> Result(String, String) {
-  let res = decode_json_from_string(json)
-  try data = dynamic.field(res, "data")
-  try repo = dynamic.field(data, "repository")
-  try release = dynamic.field(repo, "release")
-  try tag = dynamic.field(release, "tag")
-  try target = dynamic.field(tag, "target")
-  try dynamic_date = dynamic.field(target, "committedDate")
-  try date = dynamic.string(dynamic_date)
-
-  Ok(date)
-}
-
-pub fn call_api_for_datetimes(
-  token: String,
-  from_version: String,
-  to_version: String,
-) -> Result(tuple(String, String), String) {
-  let query_from = construct_release_query(from_version)
-  let query_to = construct_release_query(to_version)
-
-  try response_json = call_api(token, query_from)
-  try from_datetime = parse_datetime(response_json)
-
-  try response_json = call_api(token, query_to)
-  try to_datetime = parse_datetime(response_json)
-
-  Ok(tuple(from_datetime, to_datetime))
 }
 
 pub fn construct_contributor_query(
@@ -648,10 +674,11 @@ pub fn main(args: List(String)) -> Nil {
   // type for this reason.
   let result = {
     // Parses command line arguments
-    try tuple(token, from_version, to_version) = parse_args(args)
+    try tuple(token, from, to) = parse_args(args)
+    // try tuple(token, from_version, to_version) = parse_args(args)
     // From and to dates from version numbers
-    try datetimes = call_api_for_datetimes(token, from_version, to_version)
-    let tuple(from, to) = datetimes
+    // try datetimes = call_api_for_datetimes(token, from_version, to_version)
+    // let tuple(from, to) = datetimes
     // Calls API for Sponsors. Returns List(String) if Ok.
     try sponsors = call_api_for_sponsors(token, option.None, [])
     let str_lst_sponsors = list_sponsor_to_list_string(sponsors)

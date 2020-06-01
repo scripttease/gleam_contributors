@@ -9,7 +9,8 @@
     gleam_httpc,
     ssl,
     inets,
-    jsone
+    jsone,
+    iso8601
    ]},
   {env,[]},
   {modules, []},
