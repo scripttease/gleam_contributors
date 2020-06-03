@@ -587,11 +587,11 @@ pub fn to_output_string(lst: List(String)) -> String {
     estring,
     fn(elem, acc) {
       acc
-      |> string.append("\n")
+      |> string.append("\n - ")
       |> string.append(elem)
     },
   )
-  string_out
+  string.concat([string_out, "\n"])
 }
 
 // TODO Add nextpage cursor for when number of repos exceed 100 results
