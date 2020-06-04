@@ -610,3 +610,48 @@ pub fn list_contributor_to_list_string_test() {
 // pub fn case_insensitive_contributor_compare_test() {
 // TODO
 // }
+
+pub fn filter_creator_test() {
+  let creator = 
+      Contributor(
+        name: "Louis Pilfold",
+        github: Some("https://github.com/lpil"),
+      )
+  let lst = 
+  [
+      Contributor(
+        name: "Louis Pilfold",
+        github: Some("https://github.com/lpil"),
+      ),
+      Contributor(
+        name: "Tom Whatmore",
+        github: Some("https://github.com/tomwhatmore"),
+      ),
+      Contributor(
+        name: "Louis Pilfold",
+        github: Some("https://github.com/lpil"),
+      ),
+      Contributor(
+        name: "Louis Pilfold",
+        github: Some("https://github.com/lpil"),
+      ),
+      Contributor(
+        name: "Quinn Wilton",
+        github: Some("https://github.com/QuinnWilton"),
+      ),
+    ]
+
+  gleam_contributors.filter_creator_from_contributors(creator, lst) 
+  |> should.equal(
+  [
+      Contributor(
+        name: "Tom Whatmore",
+        github: Some("https://github.com/tomwhatmore"),
+      ),
+      Contributor(
+        name: "Quinn Wilton",
+        github: Some("https://github.com/QuinnWilton"),
+      ),
+    ]
+  )
+}

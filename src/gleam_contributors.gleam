@@ -493,6 +493,12 @@ pub fn list_contributor_to_list_string(lst: List(Contributor)) -> List(String) {
   |> set.to_list
 }
 
+pub fn filter_creator_from_contributors(creator: Contributor, lst: List(Contributor)) -> List(Contributor) {
+  list.filter(lst, fn(elem) {
+    elem != creator
+  })
+}
+
 pub fn call_api_for_contributors(
   token: String,
   from: String,
@@ -704,9 +710,11 @@ pub fn main(args: List(String)) -> Nil {
       },
     )
     let flat_contributors = list.flatten(acc_list_contributors)
+    let louis = Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil"))
+    let filtered_contributors = filter_creator_from_contributors( louis, flat_contributors)
     let str_lst_contributors = list_contributor_to_list_string(
-      flat_contributors,
-    )
+      filtered_contributors)
+    
     // Combines all sponsors and all contributors
     let str_sponsors_contributors = to_output_string(
       filter_sort(list.append(str_lst_sponsors, str_lst_contributors)),
