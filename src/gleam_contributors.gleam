@@ -222,7 +222,7 @@ pub fn list_sponsor_to_list_string(
   list.sort(string.compare)
 }
 
-pub fn filter_sponsors(lst: List(Sponsor), dollars) -> List(Sponsor) {
+pub fn filter_sponsors(lst: List(Sponsor), dollars: Int) -> List(Sponsor) {
   let cents = dollars * 100
   list.filter(lst, fn(sponsor: Sponsor) { sponsor.cents >= cents })
 }
@@ -307,10 +307,20 @@ pub fn call_api_for_sponsors(
 }
 
 // Handles command line StdIn arguments
+// Want to have an option here for just printing the MD list to STDOUT OR to run a github action that can be triggered to update the website automatically
+// something like, the first arg is IO or GA, and if it is IO main calls another fn that currently does what main does. If its GA then main calls a new github_actions fn
+// This could be a chron job set to run once a day or week OR it could be triggered by getting a new sponsor, if that is possible.
+//Outcomes https://github.com/gleam-lang/gleam - bottom of page $10 and up and https://gleam.run/ bottom of page $20 and up
+
+
 pub fn parse_args(
   args: List(String),
 ) -> Result(tuple(String, String, String), String) {
   case args {
+    ["GA", token] -> {
+      io.debug("GITHUB ACTIONS")
+      Ok(tuple(token, "GA", "GA"))
+    }
     [token, from_version, to_version] -> {
       // From and to dates from version numbers
       try datetimes = call_api_for_datetimes(
@@ -670,28 +680,36 @@ pub fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
   Ok(repo_list)
 }
 
+// Args from command line are actually an Erlang Charlist not strings, so they need to be converted.
+pub external type Charlist
+external fn charlist_to_string(Charlist) -> String = "erlang" "list_to_binary"
+
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
 // List(String) formed of whitespace seperated commands to stdin.
 // Top level, handles error-handling
-pub fn main(args: List(String)) -> Nil {
+pub fn main(args: List(Charlist)) -> Nil {
   // Try returns early so we need a let block, otherwise the whole fn would need
   // to return the same type as the result for the try, rather than nil. All of
   // the trys in the let block must have the same error (failure mode/message)
   // type for this reason.
+  // let res = case args {
+
+  // }
+  let args = list.map(args, fn(x) { charlist_to_string(x) })
+
   let result = {
     // Parses command line arguments
     try tuple(token, from, to) = parse_args(args)
-    // try tuple(token, from_version, to_version) = parse_args(args)
-    // From and to dates from version numbers
-    // try datetimes = call_api_for_datetimes(token, from_version, to_version)
-    // let tuple(from, to) = datetimes
+
     // Calls API for Sponsors. Returns List(String) if Ok.
     try sponsors = call_api_for_sponsors(token, option.None, [])
     let str_lst_sponsors = list_sponsor_to_list_string(sponsors)
     //NOTE filtering the sponsor list by sponser amount (cents) is done here. 
+    let sponsors100 = filter_sponsors(sponsors, 100)
     //TODO: Construct fn to return the avatar_url as well as name and guthub url in the required MD format
     //Construct fn to generate the filtered sponsors with avatars as a string
     //and append it to the existing output string
+
     //Returns List(Repo)
     try list_repos = call_api_for_repos(token)
     //IMPORTANT traverse is for a result or list where map would have given a list of results. IT MIGHT CHANGE TO BE CALLED MAP_WHILE!
@@ -727,6 +745,8 @@ pub fn main(args: List(String)) -> Nil {
     Ok(str_sponsors_contributors) -> {
       io.print(str_sponsors_contributors)
       io.println("Done!")
+      // io.debug("Sponsers over 100")
+      // io.debg(str_lst_contributors)
     }
     Error(e) -> io.println(e)
   }
