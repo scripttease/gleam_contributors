@@ -7,10 +7,7 @@
   {git,"https://github.com/gleam-experiments/httpc",
        {ref,"70323a0a58e7b7051cb6d1d5c7f466e8be2193cb"}},
   0},
- {<<"gleam_stdlib">>,
-  {git,"https://github.com/gleam-lang/stdlib",
-       {ref,"64e6bbb11e03945de911561edbcdac3f79a93564"}},
-  0},
+ {<<"gleam_stdlib">>,{pkg,<<"gleam_stdlib">>,<<"0.9.0">>},0},
  {<<"iso8601">>,
   {git,"https://github.com/erlsci/iso8601.git",
        {ref,"fdb0fd12d729c53f4ae6f8c2f893fd6698b8b10e"}},
@@ -18,5 +15,6 @@
  {<<"jsone">>,{pkg,<<"jsone">>,<<"1.5.2">>},0}]}.
 [
 {pkg_hash,[
+ {<<"gleam_stdlib">>, <<"D1323850E8C1481D8D6661EE572DD54D5F0F1C2CCEF208A0ADEBB72183B7B465">>},
  {<<"jsone">>, <<"87ADEA283C9CF24767B4DEED44602989A5331156DF5D60A2660E9C9114D54046">>}]}
 ].
