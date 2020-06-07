@@ -317,9 +317,9 @@ pub fn parse_args(
   args: List(String),
 ) -> Result(tuple(String, String, String), String) {
   case args {
-    ["GA", token] -> {
+    ["GA", token, filename] -> {
       io.debug("GITHUB ACTIONS")
-      Ok(tuple(token, "GA", "GA"))
+      Ok(tuple(token, "GA", filename))
     }
     [token, from_version, to_version] -> {
       // From and to dates from version numbers
@@ -684,6 +684,10 @@ pub fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
 pub external type Charlist
 external fn charlist_to_string(Charlist) -> String = "erlang" "list_to_binary"
 
+//TODO err is atom type not string, import gleam atom then if need error convert atom to string
+pub external fn read_file(filename: String) -> Result(String, String) = 
+"file" "read_file"
+
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
 // List(String) formed of whitespace seperated commands to stdin.
 // Top level, handles error-handling
@@ -738,12 +742,13 @@ pub fn main(args: List(Charlist)) -> Nil {
       filter_sort(list.append(str_lst_sponsors, str_lst_contributors)),
     )
     //TODO IMPORTANT add a line with sponsors only and sponsors filtered
-    Ok(str_sponsors_contributors)
+    try readme = read_file("README.md")
+    Ok(readme)
   }
 
   case result {
-    Ok(str_sponsors_contributors) -> {
-      io.print(str_sponsors_contributors)
+    Ok(readme) -> {
+      io.print(readme)
       io.println("Done!")
       // io.debug("Sponsers over 100")
       // io.debg(str_lst_contributors)
