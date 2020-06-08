@@ -40,6 +40,18 @@ external fn iso_format(tuple(Int, Int, Int)) -> String =
 external fn decode_json_from_string(String) -> Dynamic =
   "jsone" "decode"
 
+//TODO err is atom type not string, import gleam atom then if need error convert atom to string
+pub external fn read_file(filename: String) -> Result(String, String) =
+  "file" "read_file"
+
+//TODO error is atom type not string, import gleam atom then if need error convert atom to string
+//TODO Correct return type
+pub external fn write_file(
+  filename: String,
+  content: String,
+) -> Result(String, String) =
+  "file" "write_file"
+
 //Creates type to interrogate response to sponsor query
 pub type Sponsor {
   Sponsor(
@@ -60,6 +72,22 @@ pub type Sponsorspage {
     nextpage_cursor: Result(String, Nil),
     sponsor_list: List(Sponsor),
   )
+}
+
+pub type Contributor {
+  Contributor(name: String, github: Option(String))
+}
+
+// Could include avatarURl and websiteUrl if required
+pub type Contributorspage {
+  Contributorspage(
+    nextpage_cursor: Result(String, Nil),
+    contributor_list: List(Contributor),
+  )
+}
+
+pub type Repo {
+  Repo(org: String, name: String)
 }
 
 // Calls the Github API v4 (GraphQL)
@@ -92,6 +120,8 @@ pub fn call_api(token: String, query: String) -> Result(String, String) {
   response
 }
 
+// Constructs a query that will take a version number and return the datetime
+// that version was released.
 pub fn construct_release_query(version: String) -> String {
   let use_version = string.concat(["\"", version, "\""])
 
@@ -116,8 +146,7 @@ pub fn construct_release_query(version: String) -> String {
   )
 }
 
-// Constructs query to API to get the release datetime from the given version
-//Converts response json.
+//Converts response json to datetime string.
 pub fn parse_datetime(json: String) -> Result(String, String) {
   let res = decode_json_from_string(json)
   try data = dynamic.field(res, "data")
@@ -131,6 +160,7 @@ pub fn parse_datetime(json: String) -> Result(String, String) {
   Ok(date)
 }
 
+// Calls API with versions and gets datetimes for the version release dates
 pub fn call_api_for_datetimes(
   token: String,
   from_version: String,
@@ -157,6 +187,7 @@ pub fn call_api_for_datetimes(
 }
 
 //Concatenates optional query params into sponsor query
+// Creates query that will return all sponsors of 'lpil'
 pub fn construct_sponsor_query(
   cursor: Option(String),
   num_results: Option(String),
@@ -222,10 +253,10 @@ pub fn list_sponsor_to_list_string(
       string.concat(["[", sponsor.name, "]", "(", sponsor.github, ")"])
     },
   )
-  |> //TODO add lowercase sort
-  list.sort(case_insensitive_string_compare)
+  |> list.sort(case_insensitive_string_compare)
 }
 
+// Filters sponsor list to people who have donated `dollars` or above
 pub fn filter_sponsors(lst: List(Sponsor), dollars: Int) -> List(Sponsor) {
   let cents = dollars * 100
   list.filter(lst, fn(sponsor: Sponsor) { sponsor.cents >= cents })
@@ -310,19 +341,11 @@ pub fn call_api_for_sponsors(
   }
 }
 
-// Handles command line StdIn arguments
-// Want to have an option here for just printing the MD list to STDOUT OR to run a github action that can be triggered to update the website automatically
-// something like, the first arg is IO or GA, and if it is IO main calls another fn that currently does what main does. If its GA then main calls a new github_actions fn
-// This could be a chron job set to run once a day or week OR it could be triggered by getting a new sponsor, if that is possible.
-//Outcomes https://github.com/gleam-lang/gleam - bottom of page $10 and up and https://gleam.run/ bottom of page $20 and up
-
-
 // We want main to output a single string that can be copy pasted into a
 // Markdown file. After all the data munging is done, the final step is to
-// create a single string in the desired format. Sorting and filtering cannot be
+// create a single string in the desired format. 
 // done on the string so they must be done first.
 //TODO add dates at top. Add filtered sponsors
-// Add - at beginning of line
 pub fn to_output_string(lst: List(String)) -> String {
   let estring = ""
   let string_out = list.fold(
@@ -337,18 +360,10 @@ pub fn to_output_string(lst: List(String)) -> String {
   string.concat([string_out, "\n"])
 }
 
-pub external fn read_file(filename: String) -> Result(String, String) =
-  "file" "read_file"
-
-//TODO err is atom type not string, import gleam atom then if need error convert atom to string
-//TODO Correct return type
-pub external fn write_file(
+pub fn github_actions(
+  token: String,
   filename: String,
-  content: String,
-) -> Result(String, String) =
-  "file" "write_file"
-
-  pub fn github_actions(token: String, filename: String) -> Result(String, String) {
+) -> Result(String, String) {
   // arg: tuple(String, String, String),
   // ) -> Result(String, String) {
   let readme_text = {
@@ -364,8 +379,7 @@ pub external fn write_file(
       |> result.map_error(fn(_) { "Could not split file." })
     // Get sponsors over $10 for generated readme section
     let sponsors100 = filter_sponsors(sponsors, 10)
-    let ab_spons = 
-    io.debug("SPONS 100")
+    let ab_spons = io.debug("SPONS 100")
     io.debug(sponsors100)
     let str_lst_sponsors = list_sponsor_to_list_string(sponsors100)
     io.debug("STR LST SPONS")
@@ -374,9 +388,7 @@ pub external fn write_file(
     io.debug("OUTPUT SPONS")
     io.debug(output_sponsors)
     // recombine partone with the autogenerated bit and sponsors into a string
-    let gen_readme = string.concat(
-      [part_one, splitter, "\n", output_sponsors],
-    )
+    let gen_readme = string.concat([part_one, splitter, "\n", output_sponsors])
     // write to file 
     io.debug("TRY WRITE TO FILE")
     io.debug(gen_readme)
@@ -390,12 +402,13 @@ pub external fn write_file(
       }
     }
   }
-
+  //TODO return value??? Not required/used!
   io.debug(readme_text)
   // Nil
- readme_text
+  readme_text
 }
 
+//Parse args from STDIN
 pub fn parse_args(
   args: List(String),
 ) -> Result(tuple(String, String, String), String) {
@@ -424,22 +437,6 @@ pub fn parse_args(
       "Usage: _buildfilename $TOKEN $FROM_VERSION $TO_VESRION \nVersion should be in format `v0.3.0` \n $TO_VERSION is optional and if omitted, records will be retrieved up to the current datetime.",
     )
   }
-}
-
-pub type Contributor {
-  Contributor(name: String, github: Option(String))
-}
-
-// Could include avatarURl and websiteUrl if required
-pub type Contributorspage {
-  Contributorspage(
-    nextpage_cursor: Result(String, Nil),
-    contributor_list: List(Contributor),
-  )
-}
-
-pub type Repo {
-  Repo(org: String, name: String)
 }
 
 pub fn construct_contributor_query(
@@ -587,10 +584,11 @@ pub fn list_contributor_to_list_string(lst: List(Contributor)) -> List(String) {
   |> set.to_list
 }
 
-pub fn filter_creator_from_contributors(creator: Contributor, lst: List(Contributor)) -> List(Contributor) {
-  list.filter(lst, fn(elem) {
-    elem != creator
-  })
+pub fn filter_creator_from_contributors(
+  creator: Contributor,
+  lst: List(Contributor),
+) -> List(Contributor) {
+  list.filter(lst, fn(elem) { elem != creator })
 }
 
 pub fn call_api_for_contributors(
@@ -674,7 +672,6 @@ pub fn filter_sort(lst: List(String)) -> List(String) {
   list.sort(filtered, case_insensitive_string_compare)
 }
 
-
 // TODO Add nextpage cursor for when number of repos exceed 100 results
 pub fn parse_repos(
   repos_json: String,
@@ -702,7 +699,7 @@ pub fn parse_repos(
   Ok(list_repo)
 }
 
-// TODO take org option for gleam-experiments
+// Query for getting all of the repos
 pub fn construct_repo_query(org: String) -> String {
   string.concat(
     [
@@ -747,11 +744,9 @@ pub fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
 
 // Args from command line are actually an Erlang Charlist not strings, so they need to be converted.
 pub external type Charlist
-external fn charlist_to_string(Charlist) -> String = "erlang" "list_to_binary"
 
-//TODO err is atom type not string, import gleam atom then if need error convert atom to string
-// pub external fn read_file(filename: String) -> Result(String, String) = 
-// "file" "read_file"
+external fn charlist_to_string(Charlist) -> String =
+  "erlang" "list_to_binary"
 
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
 // List(String) formed of whitespace seperated commands to stdin.
@@ -762,23 +757,20 @@ pub fn main(args: List(Charlist)) -> Nil {
   // the trys in the let block must have the same error (failure mode/message)
   // type for this reason.
   // let res = case args {
-
   // }
   let args = list.map(args, fn(x) { charlist_to_string(x) })
 
   let result = {
     // Parses command line arguments
     try tuple(token, from, to) = parse_args(args)
-
     // Calls API for Sponsors. Returns List(String) if Ok.
     try sponsors = call_api_for_sponsors(token, option.None, [])
     let str_lst_sponsors = list_sponsor_to_list_string(sponsors)
-    //NOTE filtering the sponsor list by sponser amount (cents) is done here. 
-    let sponsors100 = filter_sponsors(sponsors, 100)
+    //NOTE filtering the sponsor list by sponser amount (cents) could also be done here. 
+    // let sponsors100 = filter_sponsors(sponsors, 100)
     //TODO: Construct fn to return the avatar_url as well as name and guthub url in the required MD format
     //Construct fn to generate the filtered sponsors with avatars as a string
     //and append it to the existing output string
-
     //Returns List(Repo)
     try list_repos = call_api_for_repos(token)
     //IMPORTANT traverse is for a result or list where map would have given a list of results. IT MIGHT CHANGE TO BE CALLED MAP_WHILE!
@@ -797,27 +789,21 @@ pub fn main(args: List(Charlist)) -> Nil {
       },
     )
     let flat_contributors = list.flatten(acc_list_contributors)
-    let louis = Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil"))
-    let filtered_contributors = filter_creator_from_contributors( louis, flat_contributors)
+    let louis = Contributor(
+      name: "Louis Pilfold",
+      github: Some("https://github.com/lpil"),
+    )
+    let filtered_contributors = filter_creator_from_contributors(
+      louis,
+      flat_contributors,
+    )
     let str_lst_contributors = list_contributor_to_list_string(
-      filtered_contributors)
-    
+      filtered_contributors,
+    )
     // Combines all sponsors and all contributors
     let str_sponsors_contributors = to_output_string(
       filter_sort(list.append(str_lst_sponsors, str_lst_contributors)),
     )
-    //TODO IMPORTANT add a line with sponsors only and sponsors filtered
-    // try readme = read_file("README.md")
-    // try gactions = github_actions(token, "README.md")
-    //try writeme = write_file("README.md", "This has written")
-    // case write_file("README.md", "This has written") {
-    //   Error(e) -> Error(e)
-    //   _ -> Ok("")
-    // }
-    // case github_actions(token, "README.md") {
-    //   Error(e) -> Error(e)
-    //   _ -> Ok("")
-    // }
     Ok(str_sponsors_contributors)
   }
 
@@ -825,8 +811,6 @@ pub fn main(args: List(Charlist)) -> Nil {
     Ok(res) -> {
       io.print(res)
       io.println("Done!")
-      // io.debug("Sponsers over 100")
-      // io.debg(str_lst_contributors)
     }
     Error(e) -> io.println(e)
   }
