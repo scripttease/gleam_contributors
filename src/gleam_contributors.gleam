@@ -629,6 +629,7 @@ pub fn call_api_for_contributors(
   org: String,
   repo_name: String,
 ) -> Result(List(Contributor), String) {
+   
   let fetch_and_parse = fn(branch) {
     request_and_parse_contributors(
       token,
