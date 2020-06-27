@@ -262,7 +262,16 @@ pub fn list_sponsor_to_list_avatar(
   list.map(
     sponsors_list,
     fn(sponsor: Sponsor) {
-      string.concat(["[<img src=\"", sponsor.avatar, "\" width=\"35\">]", "(", sponsor.github, ")"])
+      string.concat(
+        [
+          "[<img src=\"",
+          sponsor.avatar,
+          "\" width=\"35\">]",
+          "(",
+          sponsor.github,
+          ")",
+        ],
+      )
     },
   )
 }

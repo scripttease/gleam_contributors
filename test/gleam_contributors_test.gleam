@@ -92,7 +92,6 @@ pub fn parse_sponsor_test() {
 }
 
 pub fn list_sponsor_to_list_avatar_test() {
-
   let lst = [
       Sponsor(
         name: "Chris Young",
