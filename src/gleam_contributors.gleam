@@ -446,6 +446,7 @@ pub fn construct_contributor_query(
   count: Option(String),
   org: String,
   repo_name: String,
+  branch: String,
 ) -> String {
   let use_cursor = case cursor {
     option.Some(cursor) -> string.concat(["\"", cursor, "\""])
@@ -454,6 +455,7 @@ pub fn construct_contributor_query(
 
   let use_from_date = string.concat(["\"", from_date, "\""])
   let use_to_date = string.concat(["\"", to_date, "\""])
+  let use_branch = string.concat(["\"", branch, "\""])
 
   // Optional count is for use in integration tests. Otherwise the default is  100 results
   let use_count = case count {
@@ -472,7 +474,9 @@ pub fn construct_contributor_query(
       ", name: ",
       use_repo_name,
       ") {
-    object(expression: \"master\") {
+    object(expression: ",
+      use_branch,
+      ") {
       ... on Commit {
         history(since: ",
       use_from_date,
@@ -591,6 +595,31 @@ pub fn filter_creator_from_contributors(
   list.filter(lst, fn(elem) { elem != creator })
 }
 
+pub fn request_and_parse_contributors(
+  token,
+  from,
+  to,
+  cursor,
+  contributors_list,
+  org,
+  repo_name,
+  branch,
+) {
+  let query = construct_contributor_query(
+    cursor,
+    from,
+    to,
+    option.None,
+    org,
+    repo_name,
+    branch,
+  )
+
+  try response_json = call_api(token, query)
+  try contributorpage = parse_contributors(response_json)
+  Ok(contributorpage)
+}
+
 pub fn call_api_for_contributors(
   token: String,
   from: String,
@@ -600,18 +629,23 @@ pub fn call_api_for_contributors(
   org: String,
   repo_name: String,
 ) -> Result(List(Contributor), String) {
-  let query = construct_contributor_query(
-    cursor,
-    from,
-    to,
-    option.None,
-    org,
-    repo_name,
-  )
+  let fetch_and_parse = fn(branch) {
+    request_and_parse_contributors(
+      token,
+      from,
+      to,
+      cursor,
+      contributor_list,
+      org,
+      repo_name,
+      branch,
+    )
+  }
 
-  try response_json = call_api(token, query)
-
-  try contributorpage = parse_contributors(response_json)
+  try contributorpage = case fetch_and_parse("main") {
+    Ok(data) -> Ok(data)
+    Error(_) -> fetch_and_parse("master")
+  }
 
   let contributor_list = list.append(
     contributor_list,
@@ -773,6 +807,8 @@ pub fn main(args: List(Charlist)) -> Nil {
     //and append it to the existing output string
     //Returns List(Repo)
     try list_repos = call_api_for_repos(token)
+    io.debug("list repos")
+    io.debug(list_repos)
     //IMPORTANT traverse is for a result or list where map would have given a list of results. IT MIGHT CHANGE TO BE CALLED MAP_WHILE!
     try acc_list_contributors = list.traverse(
       list_repos,
@@ -788,6 +824,8 @@ pub fn main(args: List(Charlist)) -> Nil {
         )
       },
     )
+    io.debug("acc_list_contributors")
+    io.debug(acc_list_contributors)
     let flat_contributors = list.flatten(acc_list_contributors)
     let louis = Contributor(
       name: "Louis Pilfold",
@@ -812,6 +850,9 @@ pub fn main(args: List(Charlist)) -> Nil {
       io.print(res)
       io.println("Done!")
     }
-    Error(e) -> io.println(e)
+    Error(e) -> {
+      io.println("Got an Error. The message was:")
+      io.println(e)
+    }
   }
 }

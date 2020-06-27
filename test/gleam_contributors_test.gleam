@@ -395,13 +395,14 @@ pub fn parse_datetime_test() {
   |> should.equal(Ok("2020-05-19T16:09:23Z"))
 }
 
-pub fn construct_contributor_query_test() {
+pub fn construct_contributor_query_test_master() {
   let cursor = option.None
   let from = "2020-03-01T19:22:35Z"
   let to = "2020-05-07T18:57:47Z"
   let count = option.Some("5")
   let org = "gleam-lang"
   let repo_name = "gleam"
+  let branch = "master"
 
   gleam_contributors.construct_contributor_query(
     cursor,
@@ -410,11 +411,58 @@ pub fn construct_contributor_query_test() {
     count,
     org,
     repo_name,
+    branch,
   )
   |> should.equal(
     "{
   repository(owner: \"gleam-lang\", name: \"gleam\") {
     object(expression: \"master\") {
+      ... on Commit {
+        history(since: \"2020-03-01T19:22:35Z\", until: \"2020-05-07T18:57:47Z\", after: null, first: 5) {
+          totalCount
+          pageInfo {
+            hasNextPage
+            endCursor
+          }
+          nodes {
+            author {
+              name
+              user {
+                login
+                url
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}",
+  )
+}
+
+pub fn construct_contributor_query_test_main() {
+  let cursor = option.None
+  let from = "2020-03-01T19:22:35Z"
+  let to = "2020-05-07T18:57:47Z"
+  let count = option.Some("5")
+  let org = "gleam-lang"
+  let repo_name = "gleam"
+  let branch = "main"
+
+  gleam_contributors.construct_contributor_query(
+    cursor,
+    from,
+    to,
+    count,
+    org,
+    repo_name,
+    branch,
+  )
+  |> should.equal(
+    "{
+  repository(owner: \"gleam-lang\", name: \"gleam\") {
+    object(expression: \"main\") {
       ... on Commit {
         history(since: \"2020-03-01T19:22:35Z\", until: \"2020-05-07T18:57:47Z\", after: null, first: 5) {
           totalCount
