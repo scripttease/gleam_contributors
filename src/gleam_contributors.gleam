@@ -264,12 +264,11 @@ pub fn list_sponsor_to_list_avatar(
     fn(sponsor: Sponsor) {
       string.concat(
         [
-          "[<img src=\"",
-          sponsor.avatar,
-          "\" width=\"35\">]",
-          "(",
+          "<a href=\"", 
           sponsor.github,
-          ")",
+          "\"><img src=\"",
+          sponsor.avatar,
+          "\" style=\"border-radius: 100px\" width=\"74\"></a>\n",
         ],
       )
     },
