@@ -1,11 +1,12 @@
-import gleam_contributors.{Sponsorspage, Sponsor}
-import gleam_contributors.{Contributorspage, Contributor}
-import gleam/option.{Option, Some, None}
+import gleam_contributors.{Sponsor, Sponsorspage}
+import gleam_contributors.{Contributor, Contributorspage}
+import gleam/option.{None, Option, Some}
 import gleam/should
 import gleam/set.{Set}
 
 pub fn parse_sponsor_empty_with_cursor_test() {
-  let json = "
+  let json =
+    "
  {
   \"data\": {
     \"user\": {
@@ -21,13 +22,12 @@ pub fn parse_sponsor_empty_with_cursor_test() {
 
   "
   gleam_contributors.parse_sponsors(json)
-  |> should.equal(
-    Ok(Sponsorspage(nextpage_cursor: Error(Nil), sponsor_list: [])),
-  )
+  |> should.equal(Ok(Sponsorspage(nextpage_cursor: Error(Nil), sponsor_list: [])))
 }
 
 pub fn parse_sponsor_test() {
-  let json = "
+  let json =
+    "
 {
   \"data\": {
     \"user\": {
@@ -66,33 +66,9 @@ pub fn parse_sponsor_test() {
 }
   "
   gleam_contributors.parse_sponsors(json)
-  |> should.equal(
-    Ok(
-      Sponsorspage(
-        nextpage_cursor: Ok("Mg"),
-        sponsor_list: [
-          Sponsor(
-            name: "Chris Young",
-            avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-            github: "https://github.com/worldofchris",
-            website: Error(Nil),
-            cents: 500,
-          ),
-          Sponsor(
-            name: "Bruno Michel",
-            github: "https://github.com/nono",
-            avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
-            website: Ok("http://blog.menfin.info/"),
-            cents: 500,
-          ),
-        ],
-      ),
-    ),
-  )
-}
-
-pub fn list_sponsor_to_list_avatar_test() {
-  let lst = [
+  |> should.equal(Ok(Sponsorspage(
+    nextpage_cursor: Ok("Mg"),
+    sponsor_list: [
       Sponsor(
         name: "Chris Young",
         avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
@@ -107,15 +83,33 @@ pub fn list_sponsor_to_list_avatar_test() {
         website: Ok("http://blog.menfin.info/"),
         cents: 500,
       ),
-    ]
+    ],
+  )))
+}
+
+pub fn list_sponsor_to_list_avatar_test() {
+  let lst = [
+    Sponsor(
+      name: "Chris Young",
+      avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+      github: "https://github.com/worldofchris",
+      website: Error(Nil),
+      cents: 500,
+    ),
+    Sponsor(
+      name: "Bruno Michel",
+      github: "https://github.com/nono",
+      avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+      website: Ok("http://blog.menfin.info/"),
+      cents: 500,
+    ),
+  ]
 
   gleam_contributors.list_sponsor_to_list_avatar(lst)
-  |> should.equal(
-    [
-      "[<img src=\"https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4\" width=\"35\">](https://github.com/worldofchris)",
-      "[<img src=\"https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4\" width=\"35\">](https://github.com/nono)",
-    ],
-  )
+  |> should.equal([
+    "<a href=\"https://github.com/worldofchris\"><img src=\"https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4\" style=\"border-radius: 100px\" width=\"74\"></a>\n",
+    "<a href=\"https://github.com/nono\"><img src=\"https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4\" style=\"border-radius: 100px\" width=\"74\"></a>\n",
+  ])
 }
 
 pub fn list_sponsor_to_list_string_test() {
@@ -123,80 +117,75 @@ pub fn list_sponsor_to_list_string_test() {
   //   nextpage_cursor: Ok("Mg"),
   //   sponsor_list: [
   let lst = [
-      Sponsor(
-        name: "Chris Young",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/worldofchris",
-        website: Error(Nil),
-        cents: 500,
-      ),
-      Sponsor(
-        name: "Bruno Michel",
-        github: "https://github.com/nono",
-        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
-        website: Ok("http://blog.menfin.info/"),
-        cents: 500,
-      ),
-    ]
+    Sponsor(
+      name: "Chris Young",
+      avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+      github: "https://github.com/worldofchris",
+      website: Error(Nil),
+      cents: 500,
+    ),
+    Sponsor(
+      name: "Bruno Michel",
+      github: "https://github.com/nono",
+      avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+      website: Ok("http://blog.menfin.info/"),
+      cents: 500,
+    ),
+  ]
   gleam_contributors.list_sponsor_to_list_string(lst)
-  |> should.equal(
-    [
-      "[Bruno Michel](https://github.com/nono)",
-      "[Chris Young](https://github.com/worldofchris)",
-    ],
-  )
+  |> should.equal([
+    "[Bruno Michel](https://github.com/nono)", "[Chris Young](https://github.com/worldofchris)",
+  ])
 }
 
 pub fn filter_sponsors_test() {
   let lst = [
-      Sponsor(
-        name: "Chris Young",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/worldofchris",
-        website: Error(Nil),
-        cents: 500,
-      ),
-      Sponsor(
-        name: "Bruno Michel",
-        github: "https://github.com/nono",
-        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
-        website: Ok("http://blog.menfin.info/"),
-        cents: 5000,
-      ),
-    ]
+    Sponsor(
+      name: "Chris Young",
+      avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+      github: "https://github.com/worldofchris",
+      website: Error(Nil),
+      cents: 500,
+    ),
+    Sponsor(
+      name: "Bruno Michel",
+      github: "https://github.com/nono",
+      avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+      website: Ok("http://blog.menfin.info/"),
+      cents: 5000,
+    ),
+  ]
   let dollars = 20
   gleam_contributors.filter_sponsors(lst, dollars)
   |> // |> should.equal(["[Bruno Michel](https://github.com/nono)"])
-  should.equal(
-    [
-      Sponsor(
-        name: "Bruno Michel",
-        github: "https://github.com/nono",
-        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
-        website: Ok("http://blog.menfin.info/"),
-        cents: 5000,
-      ),
-    ],
-  )
+  should.equal([
+    Sponsor(
+      name: "Bruno Michel",
+      github: "https://github.com/nono",
+      avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+      website: Ok("http://blog.menfin.info/"),
+      cents: 5000,
+    ),
+  ])
 }
 
 pub fn filter_sponsors_none_test() {
   let lst = [
-      Sponsor(
-        name: "Chris Young",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/worldofchris",
-        website: Error(Nil),
-        cents: 500,
-      ),
-      Sponsor(
-        name: "Bruno Michel",
-        github: "https://github.com/nono",
-        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
-        website: Ok("http://blog.menfin.info/"),
-        cents: 500,
-      ),
-    ]
+    Sponsor(
+      name: "Chris Young",
+      avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+      github: "https://github.com/worldofchris",
+      website: Error(Nil),
+      cents: 500,
+    ),
+    Sponsor(
+      name: "Bruno Michel",
+      github: "https://github.com/nono",
+      avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+      website: Ok("http://blog.menfin.info/"),
+      cents: 500,
+    ),
+  ]
   let dollars = 50
 
   gleam_contributors.filter_sponsors(lst, dollars)
@@ -205,35 +194,35 @@ pub fn filter_sponsors_none_test() {
 
 pub fn filter_sponsors_many_unordered_500c() {
   let lst = [
-      Sponsor(
-        name: "Chris Young",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/worldofchris",
-        website: Error(Nil),
-        cents: 50000,
-      ),
-      Sponsor(
-        name: "Bruno Michel",
-        github: "https://github.com/nono",
-        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
-        website: Ok("http://blog.menfin.info/"),
-        cents: 500,
-      ),
-      Sponsor(
-        name: "Scripttease",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/scripttease",
-        website: Error(Nil),
-        cents: 50000,
-      ),
-      Sponsor(
-        name: "Jose Valim",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/josevalim",
-        website: Error(Nil),
-        cents: 10000,
-      ),
-    ]
+    Sponsor(
+      name: "Chris Young",
+      avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+      github: "https://github.com/worldofchris",
+      website: Error(Nil),
+      cents: 50000,
+    ),
+    Sponsor(
+      name: "Bruno Michel",
+      github: "https://github.com/nono",
+      avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+      website: Ok("http://blog.menfin.info/"),
+      cents: 500,
+    ),
+    Sponsor(
+      name: "Scripttease",
+      avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+      github: "https://github.com/scripttease",
+      website: Error(Nil),
+      cents: 50000,
+    ),
+    Sponsor(
+      name: "Jose Valim",
+      avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+      github: "https://github.com/josevalim",
+      website: Error(Nil),
+      cents: 10000,
+    ),
+  ]
   let dollars = 50
   gleam_contributors.filter_sponsors(lst, dollars)
   |> // |> should.equal(
@@ -243,31 +232,29 @@ pub fn filter_sponsors_many_unordered_500c() {
   //     "[Scripttease](https://github.com/scripttease)",
   //   ],
   // )
-  should.equal(
-    [
-      Sponsor(
-        name: "Chris Young",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/worldofchris",
-        website: Error(Nil),
-        cents: 50000,
-      ),
-      Sponsor(
-        name: "Scripttease",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/scripttease",
-        website: Error(Nil),
-        cents: 50000,
-      ),
-      Sponsor(
-        name: "Jose Valim",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/josevalim",
-        website: Error(Nil),
-        cents: 10000,
-      ),
-    ],
-  )
+  should.equal([
+    Sponsor(
+      name: "Chris Young",
+      avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+      github: "https://github.com/worldofchris",
+      website: Error(Nil),
+      cents: 50000,
+    ),
+    Sponsor(
+      name: "Scripttease",
+      avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+      github: "https://github.com/scripttease",
+      website: Error(Nil),
+      cents: 50000,
+    ),
+    Sponsor(
+      name: "Jose Valim",
+      avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+      github: "https://github.com/josevalim",
+      website: Error(Nil),
+      cents: 10000,
+    ),
+  ])
 }
 
 pub fn construct_sponsor_query_test() {
@@ -403,7 +390,8 @@ pub fn construct_release_query_test() {
 }
 
 pub fn parse_datetime_test() {
-  let json = "
+  let json =
+    "
 {
   \"data\": {
     \"repository\": {
@@ -515,7 +503,8 @@ pub fn construct_contributor_query_test_main() {
 }
 
 pub fn parse_contributors_empty_with_cursor_test() {
-  let json = "
+  let json =
+    "
   {
   \"data\": {
     \"repository\": {
@@ -534,14 +523,16 @@ pub fn parse_contributors_empty_with_cursor_test() {
 }
   "
   gleam_contributors.parse_contributors(json)
-  |> should.equal(
-    Ok(Contributorspage(nextpage_cursor: Error(Nil), contributor_list: [])),
-  )
+  |> should.equal(Ok(Contributorspage(
+    nextpage_cursor: Error(Nil),
+    contributor_list: [],
+  )))
 }
 
 // TODO change previous to latest or current
 pub fn parse_contributors_test() {
-  let json = "
+  let json =
+    "
 {
   \"data\": {
     \"repository\": {
@@ -607,35 +598,31 @@ pub fn parse_contributors_test() {
   "
 
   gleam_contributors.parse_contributors(json)
-  |> should.equal(
-    Ok(
-      Contributorspage(
-        nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
-        contributor_list: [
-          Contributor(
-            name: "Louis Pilfold",
-            github: Some("https://github.com/lpil"),
-          ),
-          Contributor(
-            name: "Tom Whatmore",
-            github: Some("https://github.com/tomwhatmore"),
-          ),
-          Contributor(
-            name: "Louis Pilfold",
-            github: Some("https://github.com/lpil"),
-          ),
-          Contributor(
-            name: "Louis Pilfold",
-            github: Some("https://github.com/lpil"),
-          ),
-          Contributor(
-            name: "Quinn Wilton",
-            github: Some("https://github.com/QuinnWilton"),
-          ),
-        ],
+  |> should.equal(Ok(Contributorspage(
+    nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
+    contributor_list: [
+      Contributor(
+        name: "Louis Pilfold",
+        github: Some("https://github.com/lpil"),
       ),
-    ),
-  )
+      Contributor(
+        name: "Tom Whatmore",
+        github: Some("https://github.com/tomwhatmore"),
+      ),
+      Contributor(
+        name: "Louis Pilfold",
+        github: Some("https://github.com/lpil"),
+      ),
+      Contributor(
+        name: "Louis Pilfold",
+        github: Some("https://github.com/lpil"),
+      ),
+      Contributor(
+        name: "Quinn Wilton",
+        github: Some("https://github.com/QuinnWilton"),
+      ),
+    ],
+  )))
 }
 
 pub fn remove_duplicates_test() {
@@ -650,36 +637,24 @@ pub fn list_contributor_to_list_string_test() {
   //   nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
   //   contributor_list: [
   let lst = [
-      Contributor(
-        name: "Louis Pilfold",
-        github: Some("https://github.com/lpil"),
-      ),
-      Contributor(
-        name: "Tom Whatmore",
-        github: Some("https://github.com/tomwhatmore"),
-      ),
-      Contributor(
-        name: "Louis Pilfold",
-        github: Some("https://github.com/lpil"),
-      ),
-      Contributor(
-        name: "Louis Pilfold",
-        github: Some("https://github.com/lpil"),
-      ),
-      Contributor(
-        name: "Quinn Wilton",
-        github: Some("https://github.com/QuinnWilton"),
-      ),
-    ]
+    Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil")),
+    Contributor(
+      name: "Tom Whatmore",
+      github: Some("https://github.com/tomwhatmore"),
+    ),
+    Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil")),
+    Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil")),
+    Contributor(
+      name: "Quinn Wilton",
+      github: Some("https://github.com/QuinnWilton"),
+    ),
+  ]
 
   gleam_contributors.list_contributor_to_list_string(lst)
-  |> should.equal(
-    [
-      "[Louis Pilfold](https://github.com/lpil)",
-      "[Quinn Wilton](https://github.com/QuinnWilton)",
-      "[Tom Whatmore](https://github.com/tomwhatmore)",
-    ],
-  )
+  |> should.equal([
+    "[Louis Pilfold](https://github.com/lpil)", "[Quinn Wilton](https://github.com/QuinnWilton)",
+    "[Tom Whatmore](https://github.com/tomwhatmore)",
+  ])
 }
 
 // TODO extract and test case_insensitive compare
@@ -687,44 +662,31 @@ pub fn list_contributor_to_list_string_test() {
 // TODO
 // }
 pub fn filter_creator_test() {
-  let creator = Contributor(
-    name: "Louis Pilfold",
-    github: Some("https://github.com/lpil"),
-  )
+  let creator =
+    Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil"))
   let lst = [
-      Contributor(
-        name: "Louis Pilfold",
-        github: Some("https://github.com/lpil"),
-      ),
-      Contributor(
-        name: "Tom Whatmore",
-        github: Some("https://github.com/tomwhatmore"),
-      ),
-      Contributor(
-        name: "Louis Pilfold",
-        github: Some("https://github.com/lpil"),
-      ),
-      Contributor(
-        name: "Louis Pilfold",
-        github: Some("https://github.com/lpil"),
-      ),
-      Contributor(
-        name: "Quinn Wilton",
-        github: Some("https://github.com/QuinnWilton"),
-      ),
-    ]
+    Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil")),
+    Contributor(
+      name: "Tom Whatmore",
+      github: Some("https://github.com/tomwhatmore"),
+    ),
+    Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil")),
+    Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil")),
+    Contributor(
+      name: "Quinn Wilton",
+      github: Some("https://github.com/QuinnWilton"),
+    ),
+  ]
 
   gleam_contributors.filter_creator_from_contributors(creator, lst)
-  |> should.equal(
-    [
-      Contributor(
-        name: "Tom Whatmore",
-        github: Some("https://github.com/tomwhatmore"),
-      ),
-      Contributor(
-        name: "Quinn Wilton",
-        github: Some("https://github.com/QuinnWilton"),
-      ),
-    ],
-  )
+  |> should.equal([
+    Contributor(
+      name: "Tom Whatmore",
+      github: Some("https://github.com/tomwhatmore"),
+    ),
+    Contributor(
+      name: "Quinn Wilton",
+      github: Some("https://github.com/QuinnWilton"),
+    ),
+  ])
 }
