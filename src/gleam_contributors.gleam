@@ -404,10 +404,8 @@ pub fn to_output_avatar_string(lst: List(String)) -> String {
   string.concat([string_out, "\n"])
 }
 
+
 pub fn github_actions(token: String, filename: String) -> Result(String, String) {
-  // arg: tuple(String, String, String),
-  // ) -> Result(String, String) {
-  let readme_text = {
     io.debug("CALL SPONS")
     // let tuple(token, filename, tag) = arg
     try sponsors = call_api_for_sponsors(token, option.None, [])
@@ -444,11 +442,6 @@ pub fn github_actions(token: String, filename: String) -> Result(String, String)
         Ok("")
       }
     }
-  }
-  //TODO return value??? Not required/used!
-  io.debug(readme_text)
-  // Nil
-  readme_text
 }
 
 //Parse args from STDIN
@@ -642,7 +635,6 @@ pub fn request_and_parse_contributors(
   from,
   to,
   cursor,
-  contributors_list,
   org,
   repo_name,
   branch,
@@ -678,7 +670,6 @@ pub fn call_api_for_contributors(
       from,
       to,
       cursor,
-      contributor_list,
       org,
       repo_name,
       branch,
