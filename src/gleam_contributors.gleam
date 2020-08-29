@@ -3,7 +3,7 @@
 // gleam_contributors.app.src To use them create an external fn.
 import gleam/result
 import gleam/dynamic.{Dynamic}
-import gleam/httpc.{Response, Text}
+import gleam/httpc.{Text}
 import gleam/http.{Post}
 import gleam/map
 import gleam/string
@@ -421,9 +421,6 @@ pub fn github_actions(token: String, filename: String) -> Result(String, String)
       |> result.map_error(fn(_) { "Could not split file." })
     // Get sponsors over $10 for generated readme section
     let sponsors100 = filter_sponsors(sponsors, 10)
-    let ab_spons = io.debug("SPONS 100")
-    io.debug(sponsors100)
-    // let str_lst_avatar = list_sponsor_to_list_avatar(sponsors100)
     let str_lst_sponsors = list_sponsor_to_list_string(sponsors100)
     io.debug("STR LST SPONS")
     // io.debug(str_lst_sponsors)
@@ -439,6 +436,7 @@ pub fn github_actions(token: String, filename: String) -> Result(String, String)
     io.debug(gen_readme)
     // try out = write_file("README.md", gen_readme)
     // The write_file erlnag fn does NOT return a result so we need to hack it.
+    // TODO this writes the file but then crashes erlang... Not ideal
     case write_file(filename, gen_readme) {
       Error(e) -> Error(e)
       _ -> {

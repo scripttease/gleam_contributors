@@ -1,8 +1,8 @@
 import gleam_contributors.{Sponsor, Sponsorspage}
 import gleam_contributors.{Contributor, Contributorspage}
-import gleam/option.{None, Option, Some}
+import gleam/option.{None, Some}
 import gleam/should
-import gleam/set.{Set}
+import gleam/set
 
 pub fn parse_sponsor_empty_with_cursor_test() {
   let json =
