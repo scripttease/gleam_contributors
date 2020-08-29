@@ -6,6 +6,7 @@
    [kernel,
     stdlib,
     gleam_stdlib,
+    gleam_http,
     gleam_httpc,
     ssl,
     inets,

@@ -1,13 +1,7 @@
 {"1.1.0",
-[{<<"gleam_http">>,
-  {git,"https://github.com/gleam-lang/gleam_http",
-       {ref,"69c5dd6ac223bc60a4e39ab298eb4546f3f85ae6"}},
-  1},
- {<<"gleam_httpc">>,
-  {git,"https://github.com/gleam-experiments/httpc",
-       {ref,"70323a0a58e7b7051cb6d1d5c7f466e8be2193cb"}},
-  0},
- {<<"gleam_stdlib">>,{pkg,<<"gleam_stdlib">>,<<"0.9.0">>},0},
+[{<<"gleam_http">>,{pkg,<<"gleam_http">>,<<"1.3.0">>},0},
+ {<<"gleam_httpc">>,{pkg,<<"gleam_httpc">>,<<"0.1.1">>},0},
+ {<<"gleam_stdlib">>,{pkg,<<"gleam_stdlib">>,<<"0.11.0">>},0},
  {<<"iso8601">>,
   {git,"https://github.com/erlsci/iso8601.git",
        {ref,"fdb0fd12d729c53f4ae6f8c2f893fd6698b8b10e"}},
@@ -15,6 +9,8 @@
  {<<"jsone">>,{pkg,<<"jsone">>,<<"1.5.2">>},0}]}.
 [
 {pkg_hash,[
- {<<"gleam_stdlib">>, <<"D1323850E8C1481D8D6661EE572DD54D5F0F1C2CCEF208A0ADEBB72183B7B465">>},
+ {<<"gleam_http">>, <<"DC84D787CB49550D7E98834A966A4F07EE90FE863A6088E752E8F1A208AB41C1">>},
+ {<<"gleam_httpc">>, <<"4F043D1CD5CABC0A698DC38458EF590A4295DF67AD87D20EA8D6D15F66CC8124">>},
+ {<<"gleam_stdlib">>, <<"9B1089739574CDF78A1C25A463D770A98F59E63A92324D17095AD67E867EE549">>},
  {<<"jsone">>, <<"87ADEA283C9CF24767B4DEED44602989A5331156DF5D60A2660E9C9114D54046">>}]}
 ].

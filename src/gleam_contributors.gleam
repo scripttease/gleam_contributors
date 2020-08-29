@@ -3,7 +3,7 @@
 // gleam_contributors.app.src To use them create an external fn.
 import gleam/result
 import gleam/dynamic.{Dynamic}
-import gleam/httpc.{Text}
+import gleam/httpc
 import gleam/http.{Post}
 import gleam/map
 import gleam/string
@@ -94,15 +94,15 @@ fn call_api(token: String, query: String) -> Result(String, String) {
   let json = map.from_list([tuple("query", query)])
 
   let result =
-    httpc.request(
-      method: Post,
-      url: "https://api.github.com/graphql",
-      headers: [
-        tuple("Authorization", string.append("bearer ", token)),
-        tuple("User-Agent", "gleam contributors"),
-      ],
-      body: Text("application/json", encode_json(json)),
-    )
+    http.default_req()
+    |> http.set_method(Post)
+    |> http.set_host("api.github.com")
+    |> http.set_path("/graphql")
+    |> http.prepend_req_header("user-agent", "gleam contributors")
+    |> http.prepend_req_header("authorization", string.append("bearer ", token))
+    |> http.prepend_req_header("content-type", "application/json")
+    |> http.set_req_body(encode_json(json))
+    |> httpc.send
   // TODO error(e)
   let response = case result {
     Ok(response) -> Ok(response.body)
@@ -315,7 +315,7 @@ pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
   }
 
   try nodes = dynamic.field(spons, "nodes")
-  try sponsors = dynamic.list(nodes, decode_sponsor)
+  try sponsors = dynamic.typed_list(nodes, of: decode_sponsor)
 
   Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
 }
@@ -525,7 +525,7 @@ pub fn parse_contributors(
   }
 
   try nodes = dynamic.field(history, "nodes")
-  try contributors = dynamic.list(nodes, decode_contributor)
+  try contributors = dynamic.typed_list(nodes, of: decode_contributor)
 
   Ok(Contributorspage(nextpage_cursor: cursor, contributor_list: contributors))
 }
@@ -663,14 +663,11 @@ fn parse_repos(repos_json: String, org_n: String) -> Result(List(Repo), String) 
   try repos = dynamic.field(org, "repositories")
   try nodes = dynamic.field(repos, "nodes")
   //dynamic.list needs to take a fn
-  try repo_string_list =
-    dynamic.list(
-      nodes,
-      fn(repo) {
-        try dynamic_name = dynamic.field(repo, "name")
-        dynamic.string(dynamic_name)
-      },
-    )
+  let name_field = fn(repo) {
+    try dynamic_name = dynamic.field(repo, "name")
+    dynamic.string(dynamic_name)
+  }
+  try repo_string_list = dynamic.typed_list(nodes, of: name_field)
 
   let list_repo =
     list.map(repo_string_list, fn(string) { Repo(org: org_n, name: string) })
@@ -740,22 +737,19 @@ fn print_combined_sponsors_and_contributors(args: List(String)) {
   //and append it to the existing output string
   //Returns List(Repo)
   try list_repos = call_api_for_repos(token)
-  //IMPORTANT traverse is for a result or list where map would have given a list of results. IT MIGHT CHANGE TO BE CALLED MAP_WHILE!
   try acc_list_contributors =
-    list.traverse(
-      list_repos,
-      fn(repo: Repo) {
-        call_api_for_contributors(
-          token,
-          from,
-          to,
-          option.None,
-          [],
-          repo.org,
-          repo.name,
-        )
-      },
-    )
+    list_repos
+    |> list.try_map(fn(repo: Repo) {
+      call_api_for_contributors(
+        token,
+        from,
+        to,
+        option.None,
+        [],
+        repo.org,
+        repo.name,
+      )
+    })
   let flat_contributors = list.flatten(acc_list_contributors)
   let louis =
     Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil"))
