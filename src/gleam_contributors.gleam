@@ -13,16 +13,16 @@ import gleam/int
 import gleam/io
 import gleam/option.{None, Option, Some}
 
-pub external type OkAtom
+external type OkAtom
 
 // Naming the application for Erlang to start processes required in app, such as
 // inets. Will convert Camel to Snake case.
-pub type Application {
+type Application {
   GleamContributors
 }
 
 //Erlang module Application fn ensure_all_started, see above
-pub external fn start_application_and_deps(Application) -> OkAtom =
+external fn start_application_and_deps(Application) -> OkAtom =
   "application" "ensure_all_started"
 
 //Erlang library for json encoding
@@ -41,12 +41,12 @@ external fn decode_json_from_string(String) -> Dynamic =
   "jsone" "decode"
 
 //TODO err is atom type not string, import gleam atom then if need error convert atom to string
-pub external fn read_file(filename: String) -> Result(String, String) =
+external fn read_file(filename: String) -> Result(String, String) =
   "file" "read_file"
 
 //TODO error is atom type not string, import gleam atom then if need error convert atom to string
 //TODO Correct return type
-pub external fn write_file(
+external fn write_file(
   filename: String,
   content: String,
 ) -> Result(String, String) =
@@ -91,7 +91,7 @@ pub type Repo {
 }
 
 // Calls the Github API v4 (GraphQL)
-pub fn call_api(token: String, query: String) -> Result(String, String) {
+fn call_api(token: String, query: String) -> Result(String, String) {
   io.debug(start_application_and_deps(GleamContributors))
 
   let json = map.from_list([tuple("query", query)])
@@ -160,7 +160,7 @@ pub fn parse_datetime(json: String) -> Result(String, String) {
 }
 
 // Calls API with versions and gets datetimes for the version release dates
-pub fn call_api_for_datetimes(
+fn call_api_for_datetimes(
   token: String,
   from_version: String,
   to_version: Option(String),
@@ -239,7 +239,7 @@ pub fn construct_sponsor_query(
 
 // Some sponsors wish to display their username differently, so override it for
 // these people.
-pub fn sponsor_display_name(sponsor: Sponsor) -> String {
+fn sponsor_display_name(sponsor: Sponsor) -> String {
   case sponsor.github {
     "https://github.com/ktec" -> "Clever Bunny LTD"
     _ -> sponsor.name
@@ -248,7 +248,7 @@ pub fn sponsor_display_name(sponsor: Sponsor) -> String {
 
 // Some sponsors wish to display their link differently, so override it for
 // these people.
-pub fn sponsor_display_link(sponsor: Sponsor) -> String {
+fn sponsor_display_link(sponsor: Sponsor) -> String {
   case sponsor.github {
     "https://github.com/ktec" -> "https://github.com/cleverbunny"
     _ -> sponsor.github
@@ -291,7 +291,7 @@ pub fn filter_sponsors(lst: List(Sponsor), dollars: Int) -> List(Sponsor) {
 }
 
 // Decodes sponsor section of the response JSON (List of treemaps)
-pub fn decode_sponsor(json_obj: Dynamic) -> Result(Sponsor, String) {
+fn decode_sponsor(json_obj: Dynamic) -> Result(Sponsor, String) {
   try entity = dynamic.field(json_obj, "sponsorEntity")
   try dynamic_name = dynamic.field(entity, "name")
   try name = dynamic.string(dynamic_name)
@@ -347,7 +347,7 @@ pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
   Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
 }
 
-pub fn call_api_for_sponsors(
+fn call_api_for_sponsors(
   token: String,
   cursor: Option(String),
   sponsor_list: List(Sponsor),
@@ -374,7 +374,7 @@ pub fn call_api_for_sponsors(
 // create a single string in the desired format.
 // done on the string so they must be done first.
 //TODO add dates at top. Add filtered sponsors
-pub fn to_output_string(lst: List(String)) -> String {
+fn to_output_string(lst: List(String)) -> String {
   let estring = ""
   let string_out =
     list.fold(
@@ -389,23 +389,8 @@ pub fn to_output_string(lst: List(String)) -> String {
   string.concat([string_out, "\n"])
 }
 
-pub fn to_output_avatar_string(lst: List(String)) -> String {
-  let estring = ""
-  let string_out =
-    list.fold(
-      lst,
-      estring,
-      fn(elem, acc) {
-        acc
-        |> string.append(elem)
-        |> string.append(" ")
-      },
-    )
-  string.concat([string_out, "\n"])
-}
 
-
-pub fn github_actions(token: String, filename: String) -> Result(String, String) {
+fn github_actions(token: String, filename: String) -> Result(String, String) {
     io.debug("CALL SPONS")
     // let tuple(token, filename, tag) = arg
     try sponsors = call_api_for_sponsors(token, option.None, [])
@@ -445,7 +430,7 @@ pub fn github_actions(token: String, filename: String) -> Result(String, String)
 }
 
 //Parse args from STDIN
-pub fn parse_args(
+fn parse_args(
   args: List(String),
 ) -> Result(tuple(String, String, String), String) {
   case args {
@@ -545,7 +530,7 @@ pub fn construct_contributor_query(
 // This is still parsing the response json into Gleam types, see
 // parse_contributors, but it is the contributor section only. To make the parse
 // function more readable
-pub fn decode_contributor(json_obj: Dynamic) -> Result(Contributor, String) {
+fn decode_contributor(json_obj: Dynamic) -> Result(Contributor, String) {
   try author = dynamic.field(json_obj, "author")
   try dynamic_name = dynamic.field(author, "name")
   try name = dynamic.string(dynamic_name)
@@ -630,7 +615,7 @@ pub fn filter_creator_from_contributors(
   list.filter(lst, fn(elem) { elem != creator })
 }
 
-pub fn request_and_parse_contributors(
+fn request_and_parse_contributors(
   token,
   from,
   to,
@@ -655,7 +640,7 @@ pub fn request_and_parse_contributors(
   Ok(contributorpage)
 }
 
-pub fn call_api_for_contributors(
+fn call_api_for_contributors(
   token: String,
   from: String,
   to: String,
@@ -701,33 +686,7 @@ pub fn call_api_for_contributors(
   }
 }
 
-pub fn combine_and_sort_lists_to_string(
-  sponsors: List(String),
-  contributors: List(String),
-) -> String {
-  let combo = list.append(sponsors, contributors)
-  let filtered = set.to_list(set.from_list(combo))
-  //TODO could separate this into another fn
-  let case_insensitive_string_compare = fn(a, b) {
-    string.compare(string.lowercase(a), string.lowercase(b))
-  }
-
-  let sorted_filtered = list.sort(filtered, case_insensitive_string_compare)
-
-  let estring = ""
-
-  list.fold(
-    sorted_filtered,
-    estring,
-    fn(elem, acc) {
-      acc
-      |> string.append("\n")
-      |> string.append(elem)
-    },
-  )
-}
-
-pub fn filter_sort(lst: List(String)) -> List(String) {
+fn filter_sort(lst: List(String)) -> List(String) {
   let filtered = set.to_list(set.from_list(lst))
 
   //TODO seperate out?
@@ -739,7 +698,7 @@ pub fn filter_sort(lst: List(String)) -> List(String) {
 }
 
 // TODO Add nextpage cursor for when number of repos exceed 100 results
-pub fn parse_repos(
+fn parse_repos(
   repos_json: String,
   org_n: String,
 ) -> Result(List(Repo), String) {
@@ -765,7 +724,7 @@ pub fn parse_repos(
 }
 
 // Query for getting all of the repos
-pub fn construct_repo_query(org: String) -> String {
+fn construct_repo_query(org: String) -> String {
   string.concat([
     "
   query {
@@ -787,7 +746,7 @@ pub fn construct_repo_query(org: String) -> String {
   ])
 }
 
-pub fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
+fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
   //TODO this pattern is ugly. Fix it
   let org1 = "gleam-lang"
   let org2 = "gleam-experiments"
