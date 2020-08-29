@@ -237,17 +237,35 @@ pub fn construct_sponsor_query(
   ])
 }
 
+// Some sponsors wish to display their username differently, so override it for
+// these people.
+pub fn sponsor_display_name(sponsor: Sponsor) -> String {
+  case sponsor.github {
+    "https://github.com/ktec" -> "Clever Bunny LTD"
+    _ -> sponsor.name
+  }
+}
+
+// Some sponsors wish to display their link differently, so override it for
+// these people.
+pub fn sponsor_display_link(sponsor: Sponsor) -> String {
+  case sponsor.github {
+    "https://github.com/ktec" -> "https://github.com/cleverbunny"
+    _ -> sponsor.github
+  }
+}
+
 pub fn list_sponsor_to_list_string(sponsors_list: List(Sponsor)) -> List(String) {
   let case_insensitive_string_compare = fn(a, b) {
     string.compare(string.lowercase(a), string.lowercase(b))
   }
 
-  list.map(
-    sponsors_list,
-    fn(sponsor: Sponsor) {
-      string.concat(["[", sponsor.name, "]", "(", sponsor.github, ")"])
-    },
-  )
+  sponsors_list
+  |> list.map(fn(sponsor: Sponsor) {
+    let name = sponsor_display_name(sponsor)
+    let link = sponsor_display_link(sponsor)
+    string.concat(["[", name, "]", "(", link, ")"])
+  })
   |> list.sort(case_insensitive_string_compare)
 }
 
