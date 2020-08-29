@@ -269,21 +269,6 @@ pub fn list_sponsor_to_list_string(sponsors_list: List(Sponsor)) -> List(String)
   |> list.sort(case_insensitive_string_compare)
 }
 
-pub fn list_sponsor_to_list_avatar(sponsors_list: List(Sponsor)) -> List(String) {
-  list.map(
-    sponsors_list,
-    fn(sponsor: Sponsor) {
-      string.concat([
-        "<a href=\"",
-        sponsor.github,
-        "\"><img src=\"",
-        sponsor.avatar,
-        "\" style=\"border-radius: 100px\" width=\"74\"></a>\n",
-      ])
-    },
-  )
-}
-
 // Filters sponsor list to people who have donated `dollars` or above
 pub fn filter_sponsors(lst: List(Sponsor), dollars: Int) -> List(Sponsor) {
   let cents = dollars * 100
