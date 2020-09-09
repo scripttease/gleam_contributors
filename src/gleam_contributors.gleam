@@ -2,19 +2,19 @@
 // To add an Erlang library, add deps to rebar.config, AND require lib in
 // gleam_contributors.app.src To use them create an external fn.
 import gleam/result
-import gleam/dynamic
-import gleam/map
 import gleam/string
 import gleam/set.{Set}
 import gleam/list
-import gleam/int
 import gleam/io
 import gleam/option.{None, Option, Some}
 import gleam_contributors/json
+import gleam_contributors/time
+import gleam_contributors/repo.{Repo}
 import gleam_contributors/graphql
 import gleam_contributors/markdown
 import gleam_contributors/sponsor.{Sponsor}
 import gleam_contributors/contributor.{Contributor}
+import gleam_contributors/attributee
 
 external type OkAtom
 
@@ -28,13 +28,6 @@ type Application {
 external fn start_application_and_deps(Application) -> OkAtom =
   "application" "ensure_all_started"
 
-//Erlang library for datetime
-external fn current_time() -> tuple(Int, Int, Int) =
-  "calendar" "universal_time"
-
-external fn iso_format(tuple(Int, Int, Int)) -> String =
-  "iso8601" "format"
-
 //TODO err is atom type not string, import gleam atom then if need error convert atom to string
 external fn read_file(filename: String) -> Result(String, String) =
   "file" "read_file"
@@ -47,24 +40,6 @@ external fn write_file(
 ) -> Result(String, String) =
   "file" "write_file"
 
-pub type Repo {
-  Repo(org: String, name: String)
-}
-
-// Converts response json to datetime string.
-pub fn parse_datetime(json_payload: String) -> Result(String, String) {
-  let res = json.decode(json_payload)
-  try data = dynamic.field(res, "data")
-  try repo = dynamic.field(data, "repository")
-  try release = dynamic.field(repo, "release")
-  try tag = dynamic.field(release, "tag")
-  try target = dynamic.field(tag, "target")
-  try dynamic_date = dynamic.field(target, "committedDate")
-  try date = dynamic.string(dynamic_date)
-
-  Ok(date)
-}
-
 // Calls API with versions and gets datetimes for the version release dates
 fn call_api_for_datetimes(
   token: String,
@@ -75,14 +50,14 @@ fn call_api_for_datetimes(
     Some(to_version) -> {
       let query_to = graphql.construct_release_query(to_version)
       try response_json = graphql.call_api(token, query_to)
-      parse_datetime(response_json)
+      time.decode_iso_datetime(json.decode(response_json))
     }
-    None -> Ok(iso_format(current_time()))
+    None -> Ok(time.iso_format(time.now()))
   }
 
   let query_from = graphql.construct_release_query(from_version)
   try response_json = graphql.call_api(token, query_from)
-  try from_datetime = parse_datetime(response_json)
+  try from_datetime = time.decode_iso_datetime(json.decode(response_json))
 
   Ok(tuple(from_datetime, to_datetime))
 }
@@ -217,11 +192,13 @@ pub fn list_contributor_to_list_string(
 }
 
 pub fn filter_creator_from_contributors(
-  lst: List(Contributor),
+  contributor: List(Contributor),
 ) -> List(Contributor) {
-  let creator =
-    Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil"))
-  list.filter(lst, fn(elem) { elem != creator })
+  let isnt_louis = fn(contributor: Contributor) {
+    contributor.github != Some("https://github.com/lpil")
+  }
+
+  list.filter(contributor, for: isnt_louis)
 }
 
 fn request_and_parse_contributors(
@@ -307,66 +284,21 @@ fn case_insensitive_sort(items: List(String)) -> List(String) {
   list.sort(items, case_insensitive_string_compare)
 }
 
-// TODO Add nextpage cursor for when number of repos exceed 100 results
-fn parse_repos(repos_json: String, org_n: String) -> Result(List(Repo), String) {
-  let res = json.decode(repos_json)
-  try data = dynamic.field(res, "data")
-  try org = dynamic.field(data, "organization")
-  try repos = dynamic.field(org, "repositories")
-  try nodes = dynamic.field(repos, "nodes")
-  let name_field = fn(repo) {
-    try dynamic_name = dynamic.field(repo, "name")
-    dynamic.string(dynamic_name)
-  }
-  try repo_string_list = dynamic.typed_list(nodes, of: name_field)
-
-  let list_repo =
-    list.map(repo_string_list, fn(string) { Repo(org: org_n, name: string) })
-
-  Ok(list_repo)
-}
-
-// Query for getting all of the repos
-fn construct_repo_query(org: String) -> String {
-  string.concat([
-    "
-  query {
-  organization(login: \"",
-    org,
-    "\")
-  {
-    name
-    url
-    repositories(first: 100, isFork: false) {
-      totalCount
-      nodes {
-        name
-      }
-    }
-  }
-}
-  ",
-  ])
-}
-
 fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
-  //TODO this pattern is ugly. Fix it
-  let org1 = "gleam-lang"
-  let org2 = "gleam-experiments"
+  let get_repos = fn(org) {
+    io.println(string.append("Calling API to get repos in ", org))
+    let query = graphql.construct_repo_query(org)
+    try resp = graphql.call_api(token, query)
+    resp
+    |> json.decode
+    |> repo.decode_organisation_repos(org)
+  }
 
-  io.println("Calling API to get repos in gleam-lang")
-  let query1 = construct_repo_query(org1)
-  try response_json1 = graphql.call_api(token, query1)
-  try repo_list1 = parse_repos(response_json1, org1)
+  try orgs = list.try_map(["gleam-lang", "gleam-experiments"], get_repos)
 
-  io.println("Calling API to get repos in gleam-experiments")
-  let query2 = construct_repo_query(org2)
-  try response_json2 = graphql.call_api(token, query2)
-  try repo_list2 = parse_repos(response_json2, org2)
-
-  let repo_list = list.append(repo_list1, repo_list2)
-
-  Ok(repo_list)
+  orgs
+  |> list.fold([], list.append)
+  |> Ok
 }
 
 // Args from command line are actually an Erlang Charlist not strings, so they need to be converted.
@@ -375,46 +307,46 @@ pub external type Charlist
 external fn charlist_to_string(Charlist) -> String =
   "erlang" "list_to_binary"
 
+fn call_api_for_all_contributors(token, from, to) {
+  try list_repos = call_api_for_repos(token)
+  list_repos
+  |> list.try_map(fn(repo: Repo) {
+    call_api_for_contributors(
+      token,
+      from,
+      to,
+      option.None,
+      [],
+      repo.org,
+      repo.name,
+    )
+  })
+}
+
 fn print_combined_sponsors_and_contributors(args: List(String)) {
   // Parses command line arguments
   try tuple(token, from, to) = parse_args(args)
 
-  // Calls API for Sponsors. Returns List(String) if Ok.
+  // Call API for sponsors and contribtors
   try sponsors = call_api_for_sponsors(token, option.None, [])
-  let str_list_sponsors = list_sponsor_to_list_string(sponsors)
+  try contributors = call_api_for_all_contributors(token, from, to)
 
-  // NOTE filtering the sponsor list by sponser amount (cents) could also be done here.
-  //  let sponsors100 = filter_sponsors(sponsors, 100)
-  // TODO: Construct fn to return the avatar_url as well as name and github url in the required MD format
-  // Construct fn to generate the filtered sponsors with avatars as a string
-  // and append it to the existing output string
-  // Returns List(Repo)
-  try list_repos = call_api_for_repos(token)
-  try acc_list_contributors =
-    list_repos
-    |> list.try_map(fn(repo: Repo) {
-      call_api_for_contributors(
-        token,
-        from,
-        to,
-        option.None,
-        [],
-        repo.org,
-        repo.name,
-      )
-    })
-  let flat_contributors = list.flatten(acc_list_contributors)
-  let filtered_contributors =
-    filter_creator_from_contributors(flat_contributors)
-  let str_list_contributors =
-    list_contributor_to_list_string(filtered_contributors)
-  // Combines all sponsors and all contributors
-  let str_sponsors_contributors =
-    markdown.unordered_list(case_insensitive_sort(list.append(
-      str_list_sponsors,
-      str_list_contributors,
-    )))
-  Ok(str_sponsors_contributors)
+  // Join the sponsors and contributors together as attributees
+  let contributors =
+    contributors
+    |> list.flatten
+    |> filter_creator_from_contributors
+    |> list.map(attributee.from_contributor)
+
+  let sponsors = list.map(sponsors, attributee.from_sponsor)
+
+  sponsors
+  |> list.append(contributors)
+  |> attributee.deduplicate
+  |> attributee.sort_by_name
+  |> list.map(attributee.to_markdown_link)
+  |> markdown.unordered_list
+  |> Ok
 }
 
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a

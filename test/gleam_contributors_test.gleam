@@ -3,6 +3,7 @@ import gleam_contributors/sponsor.{Sponsor, Sponsorspage}
 import gleam_contributors/contributor.{Contributor, Contributorspage}
 import gleam_contributors/graphql
 import gleam_contributors/json
+import gleam_contributors/time
 import gleam/option.{None, Some}
 import gleam/should
 import gleam/set
@@ -369,8 +370,7 @@ pub fn construct_release_query_test() {
 }
 
 pub fn parse_datetime_test() {
-  let json =
-    "
+  "
 {
   \"data\": {
     \"repository\": {
@@ -385,7 +385,8 @@ pub fn parse_datetime_test() {
   }
 }
   "
-  gleam_contributors.parse_datetime(json)
+  |> json.decode
+  |> time.decode_iso_datetime
   |> should.equal(Ok("2020-05-19T16:09:23Z"))
 }
 
