@@ -175,3 +175,26 @@ pub fn construct_sponsor_query(
 }",
   ])
 }
+
+// Query for getting all of the repos
+pub fn construct_repo_query(org: String) -> String {
+  string.concat([
+    "
+  query {
+  organization(login: \"",
+    org,
+    "\")
+  {
+    name
+    url
+    repositories(first: 100, isFork: false) {
+      totalCount
+      nodes {
+        name
+      }
+    }
+  }
+}
+  ",
+  ])
+}
