@@ -1,0 +1,21 @@
+{"1.2.0",
+[{<<"gleam_http">>,{pkg,<<"gleam_http">>,<<"1.4.0">>},0},
+ {<<"gleam_httpc">>,{pkg,<<"gleam_httpc">>,<<"0.1.1">>},0},
+ {<<"gleam_stdlib">>,{pkg,<<"gleam_stdlib">>,<<"0.11.0">>},0},
+ {<<"iso8601">>,
+  {git,"https://github.com/erlsci/iso8601.git",
+       {ref,"fdb0fd12d729c53f4ae6f8c2f893fd6698b8b10e"}},
+  0},
+ {<<"jsone">>,{pkg,<<"jsone">>,<<"1.5.2">>},0}]}.
+[
+{pkg_hash,[
+ {<<"gleam_http">>, <<"5A149037A298CCA365F2E447736D7B15F620E95C2028658EB3ADDBA05725DB08">>},
+ {<<"gleam_httpc">>, <<"4F043D1CD5CABC0A698DC38458EF590A4295DF67AD87D20EA8D6D15F66CC8124">>},
+ {<<"gleam_stdlib">>, <<"9B1089739574CDF78A1C25A463D770A98F59E63A92324D17095AD67E867EE549">>},
+ {<<"jsone">>, <<"87ADEA283C9CF24767B4DEED44602989A5331156DF5D60A2660E9C9114D54046">>}]},
+{pkg_hash_ext,[
+ {<<"gleam_http">>, <<"F1E1FDE4BBCF905CE0E9C1A867D56E05D8898945C8E10C247235A6D9623FF045">>},
+ {<<"gleam_httpc">>, <<"429AFBA1594E94C76096CFFD75E0B2BD8D7AD9E8CF13A9120BCEB4CD4E801FA2">>},
+ {<<"gleam_stdlib">>, <<"5508E169E20369FC8D400481D3F37CCB2CFD880509F63D6E2B6D85F939BC991B">>},
+ {<<"jsone">>, <<"170C171CE7F6DD70C858065154A3305B8564833C6DCCA17E10B676CA31EA976F">>}]}
+].
