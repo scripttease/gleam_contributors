@@ -3,8 +3,6 @@
 // gleam_contributors.app.src To use them create an external fn.
 import gleam/result
 import gleam/dynamic
-import gleam/httpc
-import gleam/http.{Post}
 import gleam/map
 import gleam/string
 import gleam/set.{Set}
@@ -12,9 +10,10 @@ import gleam/list
 import gleam/int
 import gleam/io
 import gleam/option.{None, Option, Some}
-import gleam_contributors/markdown
 import gleam_contributors/json
-import gleam_contributors/sponsor.{Sponsor, Sponsorspage}
+import gleam_contributors/graphql
+import gleam_contributors/markdown
+import gleam_contributors/sponsor.{Sponsor}
 import gleam_contributors/contributor.{Contributor}
 
 external type OkAtom
@@ -52,56 +51,7 @@ pub type Repo {
   Repo(org: String, name: String)
 }
 
-// Calls the Github API v4 (GraphQL)
-fn call_api(token: String, query: String) -> Result(String, String) {
-  let body = map.from_list([tuple("query", query)])
-
-  let result =
-    http.default_req()
-    |> http.set_method(Post)
-    |> http.set_host("api.github.com")
-    |> http.set_path("/graphql")
-    |> http.prepend_req_header("user-agent", "gleam contributors")
-    |> http.prepend_req_header("authorization", string.append("bearer ", token))
-    |> http.prepend_req_header("content-type", "application/json")
-    |> http.set_req_body(json.encode(body))
-    |> httpc.send
-  // TODO error(e)
-  let response = case result {
-    Ok(response) -> Ok(response.body)
-    Error(e) -> {
-      io.debug(e)
-      Error("There was an error during the POST request :(\n")
-    }
-  }
-  response
-}
-
-// Constructs a query that will take a version number and return the datetime
-// that version was released.
-pub fn construct_release_query(version: String) -> String {
-  let use_version = string.concat(["\"", version, "\""])
-
-  string.concat([
-    "{
-  repository(name: \"gleam\", owner: \"gleam-lang\") {
-    release(tagName: ",
-    use_version,
-    ") {
-      tag {
-        target {
-          ... on Commit {
-            committedDate
-          }
-        }
-      }
-    }
-  }
-}",
-  ])
-}
-
-//Converts response json to datetime string.
+// Converts response json to datetime string.
 pub fn parse_datetime(json_payload: String) -> Result(String, String) {
   let res = json.decode(json_payload)
   try data = dynamic.field(res, "data")
@@ -123,102 +73,28 @@ fn call_api_for_datetimes(
 ) -> Result(tuple(String, String), String) {
   try to_datetime = case to_version {
     Some(to_version) -> {
-      let query_to = construct_release_query(to_version)
-      try response_json = call_api(token, query_to)
+      let query_to = graphql.construct_release_query(to_version)
+      try response_json = graphql.call_api(token, query_to)
       parse_datetime(response_json)
     }
     None -> Ok(iso_format(current_time()))
   }
 
-  let query_from = construct_release_query(from_version)
-  try response_json = call_api(token, query_from)
+  let query_from = graphql.construct_release_query(from_version)
+  try response_json = graphql.call_api(token, query_from)
   try from_datetime = parse_datetime(response_json)
 
   Ok(tuple(from_datetime, to_datetime))
 }
 
-//Concatenates optional query params into sponsor query
-// Creates query that will return all sponsors of 'lpil'
-pub fn construct_sponsor_query(
-  cursor: Option(String),
-  num_results: Option(String),
-) -> String {
-  let use_cursor = case cursor {
-    option.Some(cursor) -> string.concat(["\"", cursor, "\""])
-    _ -> "null"
-  }
-
-  let use_num_results = case num_results {
-    option.Some(num_results) -> num_results
-    _ -> "100"
-  }
-
-  string.concat([
-    "{
-  user(login: \"lpil\") {
-    sponsorshipsAsMaintainer(after: ",
-    use_cursor,
-    ", first: ",
-    use_num_results,
-    ") {
-      pageInfo {
-        hasNextPage
-        endCursor
-      }
-      nodes {
-        sponsorEntity {
-          ... on User {
-            name
-            url
-            avatarUrl
-            websiteUrl
-          }
-          ... on Organization {
-            name
-            avatarUrl
-            websiteUrl
-          }
-        }
-        tier {
-          monthlyPriceInCents
-        }
-      }
-    }
-  }
-}",
-  ])
-}
-
-// Some sponsors wish to display their username differently, so override it for
-// these people.
-fn sponsor_display_name(sponsor: Sponsor) -> String {
-  case sponsor.github {
-    "https://github.com/ktec" -> "Clever Bunny LTD"
-    _ -> sponsor.name
-  }
-}
-
-// Some sponsors wish to display their link differently, so override it for
-// these people.
-fn sponsor_display_link(sponsor: Sponsor) -> String {
-  case sponsor.github {
-    "https://github.com/ktec" -> "https://github.com/cleverbunny"
-    _ -> sponsor.github
-  }
-}
-
 pub fn list_sponsor_to_list_string(sponsors_list: List(Sponsor)) -> List(String) {
-  let case_insensitive_string_compare = fn(a, b) {
-    string.compare(string.lowercase(a), string.lowercase(b))
-  }
-
   sponsors_list
-  |> list.map(fn(sponsor: Sponsor) {
-    let name = sponsor_display_name(sponsor)
-    let href = sponsor_display_link(sponsor)
+  |> list.map(fn(record: Sponsor) {
+    let name = sponsor.display_name(record)
+    let href = sponsor.display_link(record)
     markdown.link(name, to: href)
   })
-  |> list.sort(case_insensitive_string_compare)
+  |> case_insensitive_sort
 }
 
 // Filters sponsor list to people who have donated `dollars` or above
@@ -227,43 +103,16 @@ pub fn filter_sponsors(lst: List(Sponsor), dollars: Int) -> List(Sponsor) {
   list.filter(lst, fn(sponsor: Sponsor) { sponsor.cents >= cents })
 }
 
-// Takes response json string and returns a Sponsorspage
-pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
-  let res = json.decode(sponsors_json)
-  try data = dynamic.field(res, "data")
-  try user = dynamic.field(data, "user")
-  try spons = dynamic.field(user, "sponsorshipsAsMaintainer")
-  try page = dynamic.field(spons, "pageInfo")
-
-  try dynamic_nextpage = dynamic.field(page, "hasNextPage")
-  try nextpage = dynamic.bool(dynamic_nextpage)
-
-  // TODO error message string?
-  let cursor = case nextpage {
-    False -> Error(Nil)
-    True ->
-      dynamic.field(page, "endCursor")
-      |> // only returns if result(Ok(_))
-      result.then(dynamic.string)
-      |> // only called if there is no nextpage, ie result -> Error(Nil)
-      result.map_error(fn(_) { Nil })
-  }
-
-  try nodes = dynamic.field(spons, "nodes")
-  try sponsors = dynamic.typed_list(nodes, of: sponsor.decode)
-
-  Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
-}
-
 fn call_api_for_sponsors(
   token: String,
   cursor: Option(String),
   sponsor_list: List(Sponsor),
 ) -> Result(List(Sponsor), String) {
-  let query = construct_sponsor_query(cursor, option.None)
+  let query = graphql.construct_sponsor_query(cursor, option.None)
 
-  try response_json = call_api(token, query)
-  try sponsorpage = parse_sponsors(response_json)
+  try response_json = graphql.call_api(token, query)
+  let response_json = json.decode(response_json)
+  try sponsorpage = sponsor.decode_page(response_json)
 
   //The sponsor_list acts as an accumluator on the recursive call of the fn,
   //and is therefore passed in as an arg.
@@ -328,78 +177,11 @@ fn parse_args(
     }
     _ ->
       Error(
-        "Usage: _buildfilename $TOKEN $FROM_VERSION $TO_VESRION\nVersion should be in format `v0.3.0`\n$TO_VERSION is optional and if omitted, records will be retrieved up to the current datetime.",
+        "Usage: _buildfilename $TOKEN $FROM_VERSION $TO_VESRION
+Version should be in format `v0.3.0`
+$TO_VERSION is optional and if omitted, records will be retrieved up to the current datetime.",
       )
   }
-}
-
-pub fn construct_contributor_query(
-  cursor: Option(String),
-  from_date: String,
-  to_date: String,
-  count: Option(String),
-  org: String,
-  repo_name: String,
-  branch: String,
-) -> String {
-  let use_cursor = case cursor {
-    option.Some(cursor) -> string.concat(["\"", cursor, "\""])
-    _ -> "null"
-  }
-
-  let use_from_date = string.concat(["\"", from_date, "\""])
-  let use_to_date = string.concat(["\"", to_date, "\""])
-  let use_branch = string.concat(["\"", branch, "\""])
-
-  // Optional count is for use in integration tests. Otherwise the default is  100 results
-  let use_count = case count {
-    option.Some(count) -> count
-    _ -> "100"
-  }
-
-  let use_org = string.concat(["\"", org, "\""])
-  let use_repo_name = string.concat(["\"", repo_name, "\""])
-
-  string.concat([
-    "{
-  repository(owner: ",
-    use_org,
-    ", name: ",
-    use_repo_name,
-    ") {
-    object(expression: ",
-    use_branch,
-    ") {
-      ... on Commit {
-        history(since: ",
-    use_from_date,
-    ", until: ",
-    use_to_date,
-    ", after: ",
-    use_cursor,
-    ", first: ",
-    use_count,
-    ") {
-          totalCount
-          pageInfo {
-            hasNextPage
-            endCursor
-          }
-          nodes {
-            author {
-              name
-              user {
-                login
-                url
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}",
-  ])
 }
 
 //Uses the uniqueness property of sets to remove duplicates from list
@@ -423,7 +205,7 @@ pub fn list_contributor_to_list_string(
       }
     })
 
-  //TODO can the filter and sort be handled later or is here best?
+  // TODO: can the filter and sort be handled later or is here best?
   let case_insensitive_string_compare = fn(a, b) {
     string.compare(string.lowercase(a), string.lowercase(b))
   }
@@ -435,9 +217,10 @@ pub fn list_contributor_to_list_string(
 }
 
 pub fn filter_creator_from_contributors(
-  creator: Contributor,
   lst: List(Contributor),
 ) -> List(Contributor) {
+  let creator =
+    Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil"))
   list.filter(lst, fn(elem) { elem != creator })
 }
 
@@ -451,7 +234,7 @@ fn request_and_parse_contributors(
   branch,
 ) {
   let query =
-    construct_contributor_query(
+    graphql.construct_contributor_query(
       cursor,
       from,
       to,
@@ -461,7 +244,7 @@ fn request_and_parse_contributors(
       branch,
     )
 
-  try response_json = call_api(token, query)
+  try response_json = graphql.call_api(token, query)
   try contributorpage = contributor.decode_page(response_json)
   Ok(contributorpage)
 }
@@ -516,15 +299,12 @@ fn call_api_for_contributors(
   }
 }
 
-fn filter_sort(lst: List(String)) -> List(String) {
-  let filtered = set.to_list(set.from_list(lst))
-
-  //TODO seperate out?
+fn case_insensitive_sort(items: List(String)) -> List(String) {
   let case_insensitive_string_compare = fn(a, b) {
     string.compare(string.lowercase(a), string.lowercase(b))
   }
 
-  list.sort(filtered, case_insensitive_string_compare)
+  list.sort(items, case_insensitive_string_compare)
 }
 
 // TODO Add nextpage cursor for when number of repos exceed 100 results
@@ -534,7 +314,6 @@ fn parse_repos(repos_json: String, org_n: String) -> Result(List(Repo), String) 
   try org = dynamic.field(data, "organization")
   try repos = dynamic.field(org, "repositories")
   try nodes = dynamic.field(repos, "nodes")
-  //dynamic.list needs to take a fn
   let name_field = fn(repo) {
     try dynamic_name = dynamic.field(repo, "name")
     dynamic.string(dynamic_name)
@@ -577,12 +356,12 @@ fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
 
   io.println("Calling API to get repos in gleam-lang")
   let query1 = construct_repo_query(org1)
-  try response_json1 = call_api(token, query1)
+  try response_json1 = graphql.call_api(token, query1)
   try repo_list1 = parse_repos(response_json1, org1)
 
   io.println("Calling API to get repos in gleam-experiments")
   let query2 = construct_repo_query(org2)
-  try response_json2 = call_api(token, query2)
+  try response_json2 = graphql.call_api(token, query2)
   try repo_list2 = parse_repos(response_json2, org2)
 
   let repo_list = list.append(repo_list1, repo_list2)
@@ -599,15 +378,17 @@ external fn charlist_to_string(Charlist) -> String =
 fn print_combined_sponsors_and_contributors(args: List(String)) {
   // Parses command line arguments
   try tuple(token, from, to) = parse_args(args)
+
   // Calls API for Sponsors. Returns List(String) if Ok.
   try sponsors = call_api_for_sponsors(token, option.None, [])
   let str_list_sponsors = list_sponsor_to_list_string(sponsors)
-  //NOTE filtering the sponsor list by sponser amount (cents) could also be done here.
-  // let sponsors100 = filter_sponsors(sponsors, 100)
-  //TODO: Construct fn to return the avatar_url as well as name and github url in the required MD format
-  //Construct fn to generate the filtered sponsors with avatars as a string
-  //and append it to the existing output string
-  //Returns List(Repo)
+
+  // NOTE filtering the sponsor list by sponser amount (cents) could also be done here.
+  //  let sponsors100 = filter_sponsors(sponsors, 100)
+  // TODO: Construct fn to return the avatar_url as well as name and github url in the required MD format
+  // Construct fn to generate the filtered sponsors with avatars as a string
+  // and append it to the existing output string
+  // Returns List(Repo)
   try list_repos = call_api_for_repos(token)
   try acc_list_contributors =
     list_repos
@@ -623,15 +404,13 @@ fn print_combined_sponsors_and_contributors(args: List(String)) {
       )
     })
   let flat_contributors = list.flatten(acc_list_contributors)
-  let louis =
-    Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil"))
   let filtered_contributors =
-    filter_creator_from_contributors(louis, flat_contributors)
+    filter_creator_from_contributors(flat_contributors)
   let str_list_contributors =
     list_contributor_to_list_string(filtered_contributors)
   // Combines all sponsors and all contributors
   let str_sponsors_contributors =
-    markdown.unordered_list(filter_sort(list.append(
+    markdown.unordered_list(case_insensitive_sort(list.append(
       str_list_sponsors,
       str_list_contributors,
     )))

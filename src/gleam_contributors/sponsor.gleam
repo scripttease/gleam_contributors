@@ -50,3 +50,48 @@ pub fn decode(json_obj: Dynamic) -> Result(Sponsor, String) {
     cents: cents,
   ))
 }
+
+// Takes response json string and returns a Sponsorspage
+pub fn decode_page(sponsors: Dynamic) -> Result(Sponsorspage, String) {
+  try data = dynamic.field(sponsors, "data")
+  try user = dynamic.field(data, "user")
+  try spons = dynamic.field(user, "sponsorshipsAsMaintainer")
+  try page = dynamic.field(spons, "pageInfo")
+
+  try dynamic_nextpage = dynamic.field(page, "hasNextPage")
+  try nextpage = dynamic.bool(dynamic_nextpage)
+
+  // TODO error message string?
+  let cursor = case nextpage {
+    False -> Error(Nil)
+    True ->
+      dynamic.field(page, "endCursor")
+      |> // only returns if result(Ok(_))
+      result.then(dynamic.string)
+      |> // only called if there is no nextpage, ie result -> Error(Nil)
+      result.map_error(fn(_) { Nil })
+  }
+
+  try nodes = dynamic.field(spons, "nodes")
+  try sponsors = dynamic.typed_list(nodes, of: decode)
+
+  Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
+}
+
+// Some sponsors wish to display their username differently, so override it for
+// these people.
+pub fn display_name(sponsor: Sponsor) -> String {
+  case sponsor.github {
+    "https://github.com/ktec" -> "Clever Bunny LTD"
+    _ -> sponsor.name
+  }
+}
+
+// Some sponsors wish to display their link differently, so override it for
+// these people.
+pub fn display_link(sponsor: Sponsor) -> String {
+  case sponsor.github {
+    "https://github.com/ktec" -> "https://github.com/cleverbunny"
+    _ -> sponsor.github
+  }
+}

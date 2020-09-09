@@ -1,12 +1,14 @@
 import gleam_contributors
 import gleam_contributors/sponsor.{Sponsor, Sponsorspage}
 import gleam_contributors/contributor.{Contributor, Contributorspage}
+import gleam_contributors/graphql
+import gleam_contributors/json
 import gleam/option.{None, Some}
 import gleam/should
 import gleam/set
 
 pub fn parse_sponsor_empty_with_cursor_test() {
-  let json =
+  let payload =
     "
  {
   \"data\": {
@@ -22,12 +24,13 @@ pub fn parse_sponsor_empty_with_cursor_test() {
   }
 
   "
-  gleam_contributors.parse_sponsors(json)
+
+  sponsor.decode_page(json.decode(payload))
   |> should.equal(Ok(Sponsorspage(nextpage_cursor: Error(Nil), sponsor_list: [])))
 }
 
 pub fn parse_sponsor_test() {
-  let json =
+  let payload =
     "
 {
   \"data\": {
@@ -66,7 +69,7 @@ pub fn parse_sponsor_test() {
   }
 }
   "
-  gleam_contributors.parse_sponsors(json)
+  sponsor.decode_page(json.decode(payload))
   |> should.equal(Ok(Sponsorspage(
     nextpage_cursor: Ok("Mg"),
     sponsor_list: [
@@ -237,7 +240,7 @@ pub fn construct_sponsor_query_test() {
   let cursor = option.Some("Ng")
   let num_results = option.Some("2")
 
-  gleam_contributors.construct_sponsor_query(cursor, num_results)
+  graphql.construct_sponsor_query(cursor, num_results)
   |> should.equal(
     "{
   user(login: \"lpil\") {
@@ -274,7 +277,7 @@ pub fn construct_sponsor_query_nocursor_test() {
   let cursor = option.None
   let num_results = option.Some("2")
 
-  gleam_contributors.construct_sponsor_query(cursor, num_results)
+  graphql.construct_sponsor_query(cursor, num_results)
   |> should.equal(
     "{
   user(login: \"lpil\") {
@@ -311,7 +314,7 @@ pub fn construct_sponsor_query_nonum_result_test() {
   let cursor = option.None
   let num_results = option.None
 
-  gleam_contributors.construct_sponsor_query(cursor, num_results)
+  graphql.construct_sponsor_query(cursor, num_results)
   |> should.equal(
     "{
   user(login: \"lpil\") {
@@ -347,7 +350,7 @@ pub fn construct_sponsor_query_nonum_result_test() {
 pub fn construct_release_query_test() {
   let version = "v0.8.0"
 
-  gleam_contributors.construct_release_query(version)
+  graphql.construct_release_query(version)
   |> should.equal(
     "{
   repository(name: \"gleam\", owner: \"gleam-lang\") {
@@ -395,7 +398,7 @@ pub fn construct_contributor_query_test_master() {
   let repo_name = "gleam"
   let branch = "master"
 
-  gleam_contributors.construct_contributor_query(
+  graphql.construct_contributor_query(
     cursor,
     from,
     to,
@@ -441,7 +444,7 @@ pub fn construct_contributor_query_test_main() {
   let repo_name = "gleam"
   let branch = "main"
 
-  gleam_contributors.construct_contributor_query(
+  graphql.construct_contributor_query(
     cursor,
     from,
     to,
@@ -638,8 +641,6 @@ pub fn list_contributor_to_list_string_test() {
 // TODO
 // }
 pub fn filter_creator_test() {
-  let creator =
-    Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil"))
   let lst = [
     Contributor(name: "Louis Pilfold", github: Some("https://github.com/lpil")),
     Contributor(
@@ -654,7 +655,7 @@ pub fn filter_creator_test() {
     ),
   ]
 
-  gleam_contributors.filter_creator_from_contributors(creator, lst)
+  gleam_contributors.filter_creator_from_contributors(lst)
   |> should.equal([
     Contributor(
       name: "Tom Whatmore",
