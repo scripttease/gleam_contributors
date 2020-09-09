@@ -1,5 +1,6 @@
-import gleam_contributors.{Sponsor, Sponsorspage}
-import gleam_contributors.{Contributor, Contributorspage}
+import gleam_contributors
+import gleam_contributors/sponsor.{Sponsor, Sponsorspage}
+import gleam_contributors/contributor.{Contributor, Contributorspage}
 import gleam/option.{None, Some}
 import gleam/should
 import gleam/set
@@ -497,7 +498,7 @@ pub fn parse_contributors_empty_with_cursor_test() {
   }
 }
   "
-  gleam_contributors.parse_contributors(json)
+  contributor.decode_page(json)
   |> should.equal(Ok(Contributorspage(
     nextpage_cursor: Error(Nil),
     contributor_list: [],
@@ -572,7 +573,7 @@ pub fn parse_contributors_test() {
 }
   "
 
-  gleam_contributors.parse_contributors(json)
+  contributor.decode_page(json)
   |> should.equal(Ok(Contributorspage(
     nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
     contributor_list: [
