@@ -2,7 +2,7 @@
 // To add an Erlang library, add deps to rebar.config, AND require lib in
 // gleam_contributors.app.src To use them create an external fn.
 import gleam/result
-import gleam/dynamic.{Dynamic}
+import gleam/dynamic
 import gleam/httpc
 import gleam/http.{Post}
 import gleam/map
@@ -12,6 +12,10 @@ import gleam/list
 import gleam/int
 import gleam/io
 import gleam/option.{None, Option, Some}
+import gleam_contributors/markdown
+import gleam_contributors/json
+import gleam_contributors/sponsor.{Sponsor, Sponsorspage}
+import gleam_contributors/contributor.{Contributor}
 
 external type OkAtom
 
@@ -25,19 +29,12 @@ type Application {
 external fn start_application_and_deps(Application) -> OkAtom =
   "application" "ensure_all_started"
 
-//Erlang library for json encoding
-external fn encode_json(a) -> String =
-  "jsone" "encode"
-
 //Erlang library for datetime
 external fn current_time() -> tuple(Int, Int, Int) =
   "calendar" "universal_time"
 
 external fn iso_format(tuple(Int, Int, Int)) -> String =
   "iso8601" "format"
-
-external fn decode_json_from_string(String) -> Dynamic =
-  "jsone" "decode"
 
 //TODO err is atom type not string, import gleam atom then if need error convert atom to string
 external fn read_file(filename: String) -> Result(String, String) =
@@ -51,47 +48,13 @@ external fn write_file(
 ) -> Result(String, String) =
   "file" "write_file"
 
-//Creates type to interrogate response to sponsor query
-pub type Sponsor {
-  Sponsor(
-    name: String,
-    github: String,
-    avatar: String,
-    website: Result(String, Nil),
-    cents: Int,
-  )
-}
-
-//Type to interrogate a single page response from the API and determine if
-//there is further pagination. The github API will return a maximum of 100
-//results per page, however if there are more pages, the endCursor can be used
-//as a starting point for the next query.
-pub type Sponsorspage {
-  Sponsorspage(
-    nextpage_cursor: Result(String, Nil),
-    sponsor_list: List(Sponsor),
-  )
-}
-
-pub type Contributor {
-  Contributor(name: String, github: Option(String))
-}
-
-// Could include avatarURl and websiteUrl if required
-pub type Contributorspage {
-  Contributorspage(
-    nextpage_cursor: Result(String, Nil),
-    contributor_list: List(Contributor),
-  )
-}
-
 pub type Repo {
   Repo(org: String, name: String)
 }
 
 // Calls the Github API v4 (GraphQL)
 fn call_api(token: String, query: String) -> Result(String, String) {
-  let json = map.from_list([tuple("query", query)])
+  let body = map.from_list([tuple("query", query)])
 
   let result =
     http.default_req()
@@ -101,7 +64,7 @@ fn call_api(token: String, query: String) -> Result(String, String) {
     |> http.prepend_req_header("user-agent", "gleam contributors")
     |> http.prepend_req_header("authorization", string.append("bearer ", token))
     |> http.prepend_req_header("content-type", "application/json")
-    |> http.set_req_body(encode_json(json))
+    |> http.set_req_body(json.encode(body))
     |> httpc.send
   // TODO error(e)
   let response = case result {
@@ -139,8 +102,8 @@ pub fn construct_release_query(version: String) -> String {
 }
 
 //Converts response json to datetime string.
-pub fn parse_datetime(json: String) -> Result(String, String) {
-  let res = decode_json_from_string(json)
+pub fn parse_datetime(json_payload: String) -> Result(String, String) {
+  let res = json.decode(json_payload)
   try data = dynamic.field(res, "data")
   try repo = dynamic.field(data, "repository")
   try release = dynamic.field(repo, "release")
@@ -252,8 +215,8 @@ pub fn list_sponsor_to_list_string(sponsors_list: List(Sponsor)) -> List(String)
   sponsors_list
   |> list.map(fn(sponsor: Sponsor) {
     let name = sponsor_display_name(sponsor)
-    let link = sponsor_display_link(sponsor)
-    string.concat(["[", name, "]", "(", link, ")"])
+    let href = sponsor_display_link(sponsor)
+    markdown.link(name, to: href)
   })
   |> list.sort(case_insensitive_string_compare)
 }
@@ -264,37 +227,9 @@ pub fn filter_sponsors(lst: List(Sponsor), dollars: Int) -> List(Sponsor) {
   list.filter(lst, fn(sponsor: Sponsor) { sponsor.cents >= cents })
 }
 
-// Decodes sponsor section of the response JSON (List of treemaps)
-fn decode_sponsor(json_obj: Dynamic) -> Result(Sponsor, String) {
-  try entity = dynamic.field(json_obj, "sponsorEntity")
-  try dynamic_name = dynamic.field(entity, "name")
-  try name = dynamic.string(dynamic_name)
-  try dynamic_avatar = dynamic.field(entity, "avatarUrl")
-  try avatar = dynamic.string(dynamic_avatar)
-  try dynamic_github = dynamic.field(entity, "url")
-  try github = dynamic.string(dynamic_github)
-
-  try dynamic_website = dynamic.field(entity, "websiteUrl")
-  let website =
-    dynamic.string(dynamic_website)
-    |> result.map_error(fn(_) { Nil })
-
-  try tier = dynamic.field(json_obj, "tier")
-  try dynamic_cents = dynamic.field(tier, "monthlyPriceInCents")
-  try cents = dynamic.int(dynamic_cents)
-
-  Ok(Sponsor(
-    name: name,
-    github: github,
-    avatar: avatar,
-    website: website,
-    cents: cents,
-  ))
-}
-
 // Takes response json string and returns a Sponsorspage
 pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
-  let res = decode_json_from_string(sponsors_json)
+  let res = json.decode(sponsors_json)
   try data = dynamic.field(res, "data")
   try user = dynamic.field(data, "user")
   try spons = dynamic.field(user, "sponsorshipsAsMaintainer")
@@ -315,7 +250,7 @@ pub fn parse_sponsors(sponsors_json: String) -> Result(Sponsorspage, String) {
   }
 
   try nodes = dynamic.field(spons, "nodes")
-  try sponsors = dynamic.typed_list(nodes, of: decode_sponsor)
+  try sponsors = dynamic.typed_list(nodes, of: sponsor.decode)
 
   Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
 }
@@ -343,24 +278,6 @@ fn call_api_for_sponsors(
   }
 }
 
-// We want main to output a single string that can be copy pasted into a
-// Markdown file. After all the data munging is done, the final step is to
-// create a single string in the desired format.
-// done on the string so they must be done first.
-fn to_output_string(contributors: List(String)) -> String {
-  let string_out =
-    list.fold(
-      contributors,
-      "",
-      fn(elem, acc) {
-        acc
-        |> string.append("\n - ")
-        |> string.append(elem)
-      },
-    )
-  string.concat([string_out, "\n"])
-}
-
 fn github_actions(token: String, filename: String) -> Result(String, String) {
   io.println("Calling Sponsors API")
   try sponsors = call_api_for_sponsors(token, option.None, [])
@@ -376,7 +293,7 @@ fn github_actions(token: String, filename: String) -> Result(String, String) {
   // Get sponsors over $10 for generated readme section
   let sponsors100 = filter_sponsors(sponsors, 10)
   let str_lst_sponsors = list_sponsor_to_list_string(sponsors100)
-  let output_sponsors = to_output_string(str_lst_sponsors)
+  let output_sponsors = markdown.unordered_list(str_lst_sponsors)
 
   // recombine partone with the autogenerated bit and sponsors into a string
   let gen_readme = string.concat([part_one, splitter, "\n", output_sponsors])
@@ -485,51 +402,6 @@ pub fn construct_contributor_query(
   ])
 }
 
-// This is still parsing the response json into Gleam types, see
-// parse_contributors, but it is the contributor section only. To make the parse
-// function more readable
-fn decode_contributor(json_obj: Dynamic) -> Result(Contributor, String) {
-  try author = dynamic.field(json_obj, "author")
-  try dynamic_name = dynamic.field(author, "name")
-  try name = dynamic.string(dynamic_name)
-
-  let github = {
-    try user = dynamic.field(author, "user")
-    try dynamic_github = dynamic.field(user, "url")
-    dynamic.string(dynamic_github)
-  }
-
-  Ok(Contributor(name: name, github: option.from_result(github)))
-}
-
-// Converts response json into Gleam type. Represents one page of contributors
-pub fn parse_contributors(
-  response_json: String,
-) -> Result(Contributorspage, String) {
-  let res = decode_json_from_string(response_json)
-  try data = dynamic.field(res, "data")
-  try repo = dynamic.field(data, "repository")
-  try object = dynamic.field(repo, "object")
-  try history = dynamic.field(object, "history")
-  try pageinfo = dynamic.field(history, "pageInfo")
-
-  try dynamic_nextpage = dynamic.field(pageinfo, "hasNextPage")
-  try nextpage = dynamic.bool(dynamic_nextpage)
-
-  let cursor = case nextpage {
-    False -> Error(Nil)
-    True ->
-      dynamic.field(pageinfo, "endCursor")
-      |> result.then(dynamic.string)
-      |> result.map_error(fn(_) { Nil })
-  }
-
-  try nodes = dynamic.field(history, "nodes")
-  try contributors = dynamic.typed_list(nodes, of: decode_contributor)
-
-  Ok(Contributorspage(nextpage_cursor: cursor, contributor_list: contributors))
-}
-
 //Uses the uniqueness property of sets to remove duplicates from list
 pub fn remove_duplicates(sponsors_list: List(String)) -> Set(String) {
   list.fold(
@@ -546,7 +418,7 @@ pub fn list_contributor_to_list_string(
     contributors
     |> list.map(fn(contributor: Contributor) {
       case contributor.github {
-        Some(url) -> string.concat(["[", contributor.name, "](", url, ")"])
+        Some(url) -> markdown.link(contributor.name, to: url)
         None -> contributor.name
       }
     })
@@ -590,7 +462,7 @@ fn request_and_parse_contributors(
     )
 
   try response_json = call_api(token, query)
-  try contributorpage = parse_contributors(response_json)
+  try contributorpage = contributor.decode_page(response_json)
   Ok(contributorpage)
 }
 
@@ -657,7 +529,7 @@ fn filter_sort(lst: List(String)) -> List(String) {
 
 // TODO Add nextpage cursor for when number of repos exceed 100 results
 fn parse_repos(repos_json: String, org_n: String) -> Result(List(Repo), String) {
-  let res = decode_json_from_string(repos_json)
+  let res = json.decode(repos_json)
   try data = dynamic.field(res, "data")
   try org = dynamic.field(data, "organization")
   try repos = dynamic.field(org, "repositories")
@@ -759,7 +631,7 @@ fn print_combined_sponsors_and_contributors(args: List(String)) {
     list_contributor_to_list_string(filtered_contributors)
   // Combines all sponsors and all contributors
   let str_sponsors_contributors =
-    to_output_string(filter_sort(list.append(
+    markdown.unordered_list(filter_sort(list.append(
       str_list_sponsors,
       str_list_contributors,
     )))
