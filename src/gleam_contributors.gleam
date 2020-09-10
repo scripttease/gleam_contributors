@@ -62,6 +62,14 @@ fn call_api_for_datetimes(
   Ok(tuple(from_datetime, to_datetime))
 }
 
+fn case_insensitive_sort(items: List(String)) -> List(String) {
+  let case_insensitive_string_compare = fn(a, b) {
+    string.compare(string.lowercase(a), string.lowercase(b))
+  }
+
+  list.sort(items, case_insensitive_string_compare)
+}
+
 pub fn list_sponsor_to_list_string(sponsors_list: List(Sponsor)) -> List(String) {
   sponsors_list
   |> list.map(fn(record: Sponsor) {
@@ -274,14 +282,6 @@ fn call_api_for_contributors(
     }
     _ -> Ok(contributor_list)
   }
-}
-
-fn case_insensitive_sort(items: List(String)) -> List(String) {
-  let case_insensitive_string_compare = fn(a, b) {
-    string.compare(string.lowercase(a), string.lowercase(b))
-  }
-
-  list.sort(items, case_insensitive_string_compare)
 }
 
 fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
