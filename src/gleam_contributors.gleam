@@ -12,6 +12,7 @@ import gleam_contributors/time
 import gleam_contributors/repo.{Repo}
 import gleam_contributors/graphql
 import gleam_contributors/markdown
+import gleam_contributors/yaml
 import gleam_contributors/sponsor.{Sponsor}
 import gleam_contributors/contributor.{Contributor}
 import gleam_contributors/attributee
@@ -34,11 +35,20 @@ external fn read_file(filename: String) -> Result(String, String) =
 
 //TODO error is atom type not string, import gleam atom then if need error convert atom to string
 //TODO Correct return type
-external fn write_file(
+external fn erlang_write_file(
   filename: String,
   content: String,
 ) -> Result(String, String) =
   "file" "write_file"
+
+fn write_file(filename: String, content: String) -> Result(String, String) {
+  // The write_file Erlang fn does NOT return a result so we need to hack it
+  // until there are better bindings to the file IO library.
+  case erlang_write_file(filename, content) {
+    Error(e) -> Error(e)
+    _ -> Ok("")
+  }
+}
 
 // Calls API with versions and gets datetimes for the version release dates
 fn call_api_for_datetimes(
@@ -110,6 +120,15 @@ fn call_api_for_sponsors(
   }
 }
 
+fn sponsors_yaml(token: String, filename: String) -> Result(String, String) {
+  io.println("Calling Sponsors API")
+  try sponsors = call_api_for_sponsors(token, option.None, [])
+  sponsors
+  |> filter_sponsors(20)
+  |> yaml.sponsors_list
+  |> write_file(filename, _)
+}
+
 fn github_actions(token: String, filename: String) -> Result(String, String) {
   io.println("Calling Sponsors API")
   try sponsors = call_api_for_sponsors(token, option.None, [])
@@ -132,13 +151,7 @@ fn github_actions(token: String, filename: String) -> Result(String, String) {
 
   // write to file
   io.println("Writing edited content to target file")
-  // try out = write_file("README.md", gen_readme)
-  // The write_file Erlang fn does NOT return a result so we need to hack it
-  // until there are better bindings to the file IO library.
-  case write_file(filename, gen_readme) {
-    Error(e) -> Error(e)
-    _ -> Ok("")
-  }
+  write_file(filename, gen_readme)
 }
 
 //Parse args from STDIN
@@ -360,6 +373,7 @@ pub fn main(args: List(Charlist)) -> Nil {
 
   let result = case args {
     ["GA", token, filename] -> github_actions(token, filename)
+    ["sponsors-yaml", token, filename] -> sponsors_yaml(token, filename)
     _other -> print_combined_sponsors_and_contributors(args)
   }
 
