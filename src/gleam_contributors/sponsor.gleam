@@ -1,5 +1,6 @@
 import gleam/dynamic.{Dynamic}
 import gleam/result
+import gleam/string
 
 pub type Sponsor {
   Sponsor(
@@ -26,12 +27,18 @@ pub type Sponsorspage {
 ///
 pub fn decode(json_obj: Dynamic) -> Result(Sponsor, String) {
   try entity = dynamic.field(json_obj, "sponsorEntity")
-  try dynamic_name = dynamic.field(entity, "name")
-  try name = dynamic.string(dynamic_name)
-  try dynamic_avatar = dynamic.field(entity, "avatarUrl")
-  try avatar = dynamic.string(dynamic_avatar)
   try dynamic_github = dynamic.field(entity, "url")
   try github = dynamic.string(dynamic_github)
+  try dynamic_name = dynamic.field(entity, "name")
+  try name =
+    dynamic.string(dynamic_name)
+    |> result.or(Ok(string.slice(
+      from: github,
+      at_index: string.length("https://github.com/"),
+      length: 1000,
+    )))
+  try dynamic_avatar = dynamic.field(entity, "avatarUrl")
+  try avatar = dynamic.string(dynamic_avatar)
 
   try dynamic_website = dynamic.field(entity, "websiteUrl")
   let website =
