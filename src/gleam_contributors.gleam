@@ -90,7 +90,7 @@ pub fn list_sponsor_to_list_string(sponsors_list: List(Sponsor)) -> List(String)
   |> case_insensitive_sort
 }
 
-// Filters sponsor list to people who have donated `dollars` or above
+/// Filters sponsor list to people who have donated `dollars` or above
 pub fn filter_sponsors(lst: List(Sponsor), dollars: Int) -> List(Sponsor) {
   let cents = dollars * 100
   list.filter(lst, fn(sponsor: Sponsor) { sponsor.cents >= cents })
@@ -120,16 +120,35 @@ fn call_api_for_sponsors(
   }
 }
 
-fn sponsors_yaml(token: String, filename: String) -> Result(String, String) {
+pub type WebsiteTiers {
+  WebsiteTiers(first: List(Sponsor), second: List(Sponsor))
+}
+
+fn website_tiers(sponsors: List(Sponsor)) -> WebsiteTiers {
+  let fold = fn(sponsor: Sponsor, acc: WebsiteTiers) {
+    case sponsor.cents / 100 {
+      dollars if dollars >= 100 ->
+        WebsiteTiers(..acc, second: [sponsor, ..acc.second])
+
+      dollars if dollars >= 20 ->
+        WebsiteTiers(..acc, first: [sponsor, ..acc.first])
+
+      _otherwise -> acc
+    }
+  }
+  list.fold(sponsors, WebsiteTiers([], []), fold)
+}
+
+fn website_yaml(token: String, filename: String) -> Result(String, String) {
   io.println("Calling Sponsors API")
   try sponsors = call_api_for_sponsors(token, option.None, [])
-  sponsors
-  |> filter_sponsors(20)
-  |> yaml.sponsors_list
+  let tiers = website_tiers(sponsors)
+  [tuple("first_tier", tiers.first), tuple("second_tier", tiers.second)]
+  |> yaml.sponsors_tiers
   |> write_file(filename, _)
 }
 
-fn github_actions(token: String, filename: String) -> Result(String, String) {
+fn readme_list(token: String, filename: String) -> Result(String, String) {
   io.println("Calling Sponsors API")
   try sponsors = call_api_for_sponsors(token, option.None, [])
   io.println("Reading target file")
@@ -372,8 +391,8 @@ pub fn main(args: List(Charlist)) -> Nil {
   let args = list.map(args, fn(x) { charlist_to_string(x) })
 
   let result = case args {
-    ["GA", token, filename] -> github_actions(token, filename)
-    ["sponsors-yaml", token, filename] -> sponsors_yaml(token, filename)
+    ["readme-list", token, filename] -> readme_list(token, filename)
+    ["website-yaml", token, filename] -> website_yaml(token, filename)
     _other -> print_combined_sponsors_and_contributors(args)
   }
 
