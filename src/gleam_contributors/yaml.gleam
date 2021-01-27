@@ -12,11 +12,11 @@ pub fn sponsors_tiers(sponsors: List(tuple(String, List(Sponsor)))) -> String {
 fn nested_sponsor_list_entry(sponsor: Sponsor) -> StringBuilder {
   [
     "- name: \"",
-    sponsor.name,
+    sponsor.display_name(sponsor),
     "\"\n  url: \"",
-    sponsor.github,
+    sponsor.display_link(sponsor),
     "\"\n  avatar: \"",
-    sponsor.avatar,
+    sponsor.display_avatar(sponsor),
     "\"\n",
   ]
   |> string_builder.from_strings
