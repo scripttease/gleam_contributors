@@ -173,7 +173,7 @@ fn readme_list(token: String, filename: String) -> Result(String, String) {
   write_file(filename, gen_readme)
 }
 
-//Parse args from STDIN
+// Parse args from STDIN
 fn parse_args(
   args: List(String),
 ) -> Result(tuple(String, String, String), String) {

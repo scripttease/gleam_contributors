@@ -90,6 +90,7 @@ pub fn decode_page(sponsors: Dynamic) -> Result(Sponsorspage, String) {
 pub fn display_name(sponsor: Sponsor) -> String {
   case sponsor.github {
     "https://github.com/ktec" -> "Clever Bunny LTD"
+    "https://github.com/varnerac" -> "NineFX"
     _ -> sponsor.name
   }
 }
@@ -97,8 +98,20 @@ pub fn display_name(sponsor: Sponsor) -> String {
 // Some sponsors wish to display their link differently, so override it for
 // these people.
 pub fn display_link(sponsor: Sponsor) -> String {
+  let website = result.unwrap(sponsor.website, sponsor.github)
   case sponsor.github {
     "https://github.com/ktec" -> "https://github.com/cleverbunny"
+    "https://github.com/varnerac" -> website
     _ -> sponsor.github
+  }
+}
+
+// Some sponsors wish to display their avatar differently, so override it for
+// these people.
+pub fn display_avatar(sponsor: Sponsor) -> String {
+  case sponsor.github {
+    "https://github.com/varnerac" ->
+      "https://gleam.run/images/sponsors/nine-fx.png"
+    _ -> sponsor.avatar
   }
 }
