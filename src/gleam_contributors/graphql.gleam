@@ -162,6 +162,7 @@ pub fn construct_sponsor_query(
           }
           ... on Organization {
             name
+            url
             avatarUrl
             websiteUrl
           }
