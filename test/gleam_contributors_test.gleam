@@ -260,6 +260,7 @@ pub fn construct_sponsor_query_test() {
           }
           ... on Organization {
             name
+            url
             avatarUrl
             websiteUrl
           }
@@ -297,6 +298,7 @@ pub fn construct_sponsor_query_nocursor_test() {
           }
           ... on Organization {
             name
+            url
             avatarUrl
             websiteUrl
           }
@@ -334,6 +336,7 @@ pub fn construct_sponsor_query_nonum_result_test() {
           }
           ... on Organization {
             name
+            url
             avatarUrl
             websiteUrl
           }
