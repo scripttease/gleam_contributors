@@ -4,7 +4,7 @@ import gleam_contributors/contributor.{Contributor, Contributorspage}
 import gleam_contributors/graphql
 import gleam_contributors/json
 import gleam_contributors/time
-import gleam/option.{None, Some}
+import gleam/option.{Some}
 import gleam/should
 import gleam/set
 
