@@ -1,10 +1,10 @@
 import gleam/dynamic.{Dynamic}
 
 /// Erlang library for datetime
-pub external fn now() -> tuple(Int, Int, Int) =
+pub external fn now() -> #(Int, Int, Int) =
   "calendar" "universal_time"
 
-pub external fn iso_format(tuple(Int, Int, Int)) -> String =
+pub external fn iso_format(#(Int, Int, Int)) -> String =
   "iso8601" "format"
 
 // Converts response json to datetime string.

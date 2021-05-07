@@ -2,7 +2,7 @@ import gleam/list
 import gleam/string_builder.{StringBuilder}
 import gleam_contributors/sponsor.{Sponsor}
 
-pub fn sponsors_tiers(sponsors: List(tuple(String, List(Sponsor)))) -> String {
+pub fn sponsors_tiers(sponsors: List(#(String, List(Sponsor)))) -> String {
   sponsors
   |> list.map(tier)
   |> string_builder.concat
@@ -22,8 +22,8 @@ fn nested_sponsor_list_entry(sponsor: Sponsor) -> StringBuilder {
   |> string_builder.from_strings
 }
 
-pub fn tier(sponsors: tuple(String, List(Sponsor))) -> StringBuilder {
-  let tuple(name, sponsors) = sponsors
+pub fn tier(sponsors: #(String, List(Sponsor))) -> StringBuilder {
+  let #(name, sponsors) = sponsors
   string_builder.from_string(name)
   |> string_builder.append(":\n")
   |> string_builder.append_builder(

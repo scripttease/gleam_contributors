@@ -28,7 +28,7 @@ pub fn deduplicate(attributees: List(Attributee)) -> List(Attributee) {
       Attributee(github: Some(github), ..) -> github
       Attributee(name: name, ..) -> string.append("name->", name)
     }
-    tuple(key, attributee)
+    #(key, attributee)
   })
   |> map.from_list
   |> map.values

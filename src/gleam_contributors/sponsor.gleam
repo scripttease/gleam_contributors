@@ -27,6 +27,7 @@ pub type Sponsorspage {
 ///
 pub fn decode(json_obj: Dynamic) -> Result(Sponsor, String) {
   try entity = dynamic.field(json_obj, "sponsorEntity")
+
   try dynamic_github = dynamic.field(entity, "url")
   try github = dynamic.string(dynamic_github)
   try dynamic_name = dynamic.field(entity, "name")
@@ -39,16 +40,13 @@ pub fn decode(json_obj: Dynamic) -> Result(Sponsor, String) {
     )))
   try dynamic_avatar = dynamic.field(entity, "avatarUrl")
   try avatar = dynamic.string(dynamic_avatar)
-
   try dynamic_website = dynamic.field(entity, "websiteUrl")
   let website =
     dynamic.string(dynamic_website)
     |> result.map_error(fn(_) { Nil })
-
   try tier = dynamic.field(json_obj, "tier")
   try dynamic_cents = dynamic.field(tier, "monthlyPriceInCents")
   try cents = dynamic.int(dynamic_cents)
-
   Ok(Sponsor(
     name: name,
     github: github,
@@ -60,28 +58,25 @@ pub fn decode(json_obj: Dynamic) -> Result(Sponsor, String) {
 
 // Takes response json string and returns a Sponsorspage
 pub fn decode_page(sponsors: Dynamic) -> Result(Sponsorspage, String) {
+  // TODO error message string?
+  // only returns if result(Ok(_))
+  // only called if there is no nextpage, ie result -> Error(Nil)
   try data = dynamic.field(sponsors, "data")
+
   try user = dynamic.field(data, "user")
   try spons = dynamic.field(user, "sponsorshipsAsMaintainer")
   try page = dynamic.field(spons, "pageInfo")
-
   try dynamic_nextpage = dynamic.field(page, "hasNextPage")
   try nextpage = dynamic.bool(dynamic_nextpage)
-
-  // TODO error message string?
   let cursor = case nextpage {
     False -> Error(Nil)
     True ->
       dynamic.field(page, "endCursor")
-      |> // only returns if result(Ok(_))
-      result.then(dynamic.string)
-      |> // only called if there is no nextpage, ie result -> Error(Nil)
-      result.map_error(fn(_) { Nil })
+      |> result.then(dynamic.string)
+      |> result.map_error(fn(_) { Nil })
   }
-
   try nodes = dynamic.field(spons, "nodes")
   try sponsors = dynamic.typed_list(nodes, of: decode)
-
   Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
 }
 

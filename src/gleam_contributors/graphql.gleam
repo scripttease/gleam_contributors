@@ -8,7 +8,7 @@ import gleam_contributors/json
 
 /// Calls the Github API v4 (GraphQL)
 pub fn call_api(token: String, query: String) -> Result(String, String) {
-  let body = map.from_list([tuple("query", query)])
+  let body = map.from_list([#("query", query)])
 
   let result =
     http.default_req()
