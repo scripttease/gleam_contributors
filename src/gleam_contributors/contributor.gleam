@@ -23,10 +23,11 @@ pub fn decode(json_obj: Dynamic) -> Result(Contributor, String) {
 
   try dynamic_name = dynamic.field(author, "name")
   try name = dynamic.string(dynamic_name)
-  let github =
+  let github = {
     try user = dynamic.field(author, "user")
     try dynamic_github = dynamic.field(user, "url")
     dynamic.string(dynamic_github)
+  }
   Ok(Contributor(name: name, github: option.from_result(github)))
 }
 

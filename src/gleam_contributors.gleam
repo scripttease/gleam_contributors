@@ -172,16 +172,18 @@ fn readme_list(token: String, filename: String) -> Result(String, String) {
 // Parse args from STDIN
 fn parse_args(args: List(String)) -> Result(#(String, String, String), String) {
   case args {
-    [token, from_version, to_version] ->
+    [token, from_version, to_version] -> {
       // From and to dates from version numbers
       try datetimes =
         call_api_for_datetimes(token, from_version, Some(to_version))
       let #(from, to) = datetimes
       Ok(#(token, from, to))
-    [token, from_version] ->
+    }
+    [token, from_version] -> {
       try datetimes = call_api_for_datetimes(token, from_version, None)
       let #(from, to) = datetimes
       Ok(#(token, from, to))
+    }
     _ ->
       Error(
         "Usage: _buildfilename $TOKEN $FROM_VERSION $TO_VESRION
