@@ -1,4 +1,4 @@
-import gleam/dynamic.{Dynamic}
+import gleam/dynamic.{DecodeError, Dynamic}
 import gleam/result
 import gleam/string
 
@@ -25,7 +25,7 @@ pub type Sponsorspage {
 
 /// Decodes sponsor section of the response JSON (List of maps)
 ///
-pub fn decode(json_obj: Dynamic) -> Result(Sponsor, String) {
+pub fn decode(json_obj: Dynamic) -> Result(Sponsor, DecodeError) {
   try entity = dynamic.field(json_obj, "sponsorEntity")
 
   try dynamic_github = dynamic.field(entity, "url")
@@ -57,7 +57,7 @@ pub fn decode(json_obj: Dynamic) -> Result(Sponsor, String) {
 }
 
 // Takes response json string and returns a Sponsorspage
-pub fn decode_page(sponsors: Dynamic) -> Result(Sponsorspage, String) {
+pub fn decode_page(sponsors: Dynamic) -> Result(Sponsorspage, DecodeError) {
   // TODO error message string?
   // only returns if result(Ok(_))
   // only called if there is no nextpage, ie result -> Error(Nil)

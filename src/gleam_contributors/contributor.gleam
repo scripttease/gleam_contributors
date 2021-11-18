@@ -1,6 +1,6 @@
 import gleam/result
 import gleam/option.{Option}
-import gleam/dynamic.{Dynamic}
+import gleam/dynamic.{DecodeError, Dynamic}
 import gleam_contributors/json
 
 pub type Contributor {
@@ -18,7 +18,7 @@ pub type Contributorspage {
 // This is still parsing the response json into Gleam types, see
 // parse_contributors, but it is the contributor section only. To make the parse
 // function more readable
-pub fn decode(json_obj: Dynamic) -> Result(Contributor, String) {
+pub fn decode(json_obj: Dynamic) -> Result(Contributor, DecodeError) {
   try author = dynamic.field(json_obj, "author")
 
   try dynamic_name = dynamic.field(author, "name")
@@ -32,7 +32,9 @@ pub fn decode(json_obj: Dynamic) -> Result(Contributor, String) {
 }
 
 /// Converts response json into Gleam type. Represents one page of contributors
-pub fn decode_page(response_json: String) -> Result(Contributorspage, String) {
+pub fn decode_page(
+  response_json: String,
+) -> Result(Contributorspage, DecodeError) {
   let res = json.decode(response_json)
 
   try data = dynamic.field(res, "data")

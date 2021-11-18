@@ -1,21 +1,26 @@
 {"1.2.0",
-[{<<"gleam_http">>,{pkg,<<"gleam_http">>,<<"2.0.0">>},0},
- {<<"gleam_httpc">>,{pkg,<<"gleam_httpc">>,<<"0.1.1">>},0},
- {<<"gleam_stdlib">>,{pkg,<<"gleam_stdlib">>,<<"0.15.0">>},0},
+[{<<"gleam_http">>,{pkg,<<"gleam_http">>,<<"2.0.2">>},0},
+ {<<"gleam_httpc">>,{pkg,<<"gleam_httpc">>,<<"1.0.3">>},0},
+ {<<"gleam_should_assertions">>,
+  {pkg,<<"gleam_should_assertions">>,<<"0.1.0">>},
+  1},
+ {<<"gleam_stdlib">>,{pkg,<<"gleam_stdlib">>,<<"0.17.1">>},0},
  {<<"iso8601">>,
   {git,"https://github.com/erlsci/iso8601.git",
        {ref,"fdb0fd12d729c53f4ae6f8c2f893fd6698b8b10e"}},
   0},
- {<<"jsone">>,{pkg,<<"jsone">>,<<"1.5.7">>},0}]}.
+ {<<"jsone">>,{pkg,<<"jsone">>,<<"1.7.0">>},0}]}.
 [
 {pkg_hash,[
- {<<"gleam_http">>, <<"5CEDF334F58A5C646A302DB98CEFAFC36C34606C8F479CB5AB27ED3C06A5C546">>},
- {<<"gleam_httpc">>, <<"4F043D1CD5CABC0A698DC38458EF590A4295DF67AD87D20EA8D6D15F66CC8124">>},
- {<<"gleam_stdlib">>, <<"7979CDEA88D206250845F129A342C82FB04DA5DFD4ECE3CC5C6A1E3983117D15">>},
- {<<"jsone">>, <<"036EC290BF3B2B3348B2EEC199A0FCDA62CE296AB6B736A403A6A440C5203618">>}]},
+ {<<"gleam_http">>, <<"3B08DC628191E29BE49FEE4B1C11F1EE38F90AA7B63A2C0E36B45E86B9147CD8">>},
+ {<<"gleam_httpc">>, <<"77E1C7A0952887A90C2380E49E50CD13D7BE6E2961E7F94388B350632027C865">>},
+ {<<"gleam_should_assertions">>, <<"3449DE5812D6BD598FE5F6D0414BDBEFEEBFCEA936FCB099367B6217D6EB0351">>},
+ {<<"gleam_stdlib">>, <<"40645CEDAA2DF54DB409EAFC79064BF6B2458715CF53270980E7200735EE4966">>},
+ {<<"jsone">>, <<"1E3BD7D5DD44BB2EB0797DDDEA1CBF2DDAB8D9F29E499A467CA171C23F5984EA">>}]},
 {pkg_hash_ext,[
- {<<"gleam_http">>, <<"0FC0D01067E15E7AEC0A46F5897962217EAE9D3EA12FBAB1C0B6813822B6A1F3">>},
- {<<"gleam_httpc">>, <<"429AFBA1594E94C76096CFFD75E0B2BD8D7AD9E8CF13A9120BCEB4CD4E801FA2">>},
- {<<"gleam_stdlib">>, <<"22B54D25271227B20E28B3DB341E39FEB04DB88D10A01AA7537F5FFD428CB0D2">>},
- {<<"jsone">>, <<"5F146CBF953469667EEE145FB066D6EE6B9B181BCFD547295317526E7464D732">>}]}
+ {<<"gleam_http">>, <<"C6E2351E084C9B9304724B231ABE2DA14E1DE67B74172B59288E7291CAC4D50B">>},
+ {<<"gleam_httpc">>, <<"69BDA42817F036FB734B1740634A51A1DD0886099204E50F7260A282549DA14C">>},
+ {<<"gleam_should_assertions">>, <<"255AE12F9D947B05A180A5B01FE4B458049E69636E3A961A0C05443F70AC7F27">>},
+ {<<"gleam_stdlib">>, <<"F2AF084B2C38AD94DFB3D8EB0FF868B42AF2BFCBDD89A30B5C62945C8A2C9EB8">>},
+ {<<"jsone">>, <<"A3A33712EE6BC8BE10CFA21C7C425A299DE4C5A8533F9F931E577A6D0E8F5DBD">>}]}
 ].

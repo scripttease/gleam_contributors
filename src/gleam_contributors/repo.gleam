@@ -1,4 +1,4 @@
-import gleam/dynamic.{Dynamic}
+import gleam/dynamic.{DecodeError, Dynamic}
 import gleam/list
 
 pub type Repo {
@@ -9,7 +9,7 @@ pub type Repo {
 pub fn decode_organisation_repos(
   repos_json: Dynamic,
   org_n: String,
-) -> Result(List(Repo), String) {
+) -> Result(List(Repo), DecodeError) {
   try data = dynamic.field(repos_json, "data")
 
   try org = dynamic.field(data, "organization")
