@@ -13,9 +13,10 @@ import gleam_contributors/repo.{Repo}
 import gleam_contributors/graphql
 import gleam_contributors/markdown
 import gleam_contributors/yaml
-import gleam_contributors/sponsor.{Sponsor}
+import gleam_contributors/sponsor.{Sponsor, Sponsorspage}
 import gleam_contributors/contributor.{Contributor}
 import gleam_contributors/attributee
+import gleam/dynamic.{DecodeError, Dynamic}
 
 external type OkAtom
 
@@ -50,6 +51,15 @@ fn write_file(filename: String, content: String) -> Result(String, String) {
   }
 }
 
+fn decode_error_to_string(error: DecodeError) -> String {
+  string.concat([
+    "DecodeError Expected: ",
+    error.expected,
+    ", got: ",
+    error.found,
+  ])
+}
+
 // Calls API with versions and gets datetimes for the version release dates
 fn call_api_for_datetimes(
   token: String,
@@ -58,9 +68,11 @@ fn call_api_for_datetimes(
 ) -> Result(#(String, String), String) {
   try to_datetime = case to_version {
     Some(to_version) -> {
-      let query_to = graphql.construct_release_query(to_version)
-      try response_json = graphql.call_api(token, query_to)
+      let query_to: String = graphql.construct_release_query(to_version)
+      try response_json: String = graphql.call_api(token, query_to)
       time.decode_iso_datetime(json.decode(response_json))
+      // returns Result(String DecodeError)
+      |> result.map_error(decode_error_to_string)
     }
     None -> Ok(time.iso_format(time.now()))
   }
@@ -68,7 +80,9 @@ fn call_api_for_datetimes(
   let query_from = graphql.construct_release_query(from_version)
 
   try response_json = graphql.call_api(token, query_from)
-  try from_datetime = time.decode_iso_datetime(json.decode(response_json))
+  try from_datetime =
+    time.decode_iso_datetime(json.decode(response_json))
+    |> result.map_error(decode_error_to_string)
   Ok(#(from_datetime, to_datetime))
 }
 
@@ -105,10 +119,14 @@ fn call_api_for_sponsors(
 
   //The sponsor_list acts as an accumluator on the recursive call of the fn,
   //and is therefore passed in as an arg.
-  try response_json = graphql.call_api(token, query)
-  let response_json = json.decode(response_json)
-  try sponsorpage = sponsor.decode_page(response_json)
-  let sponsor_list = list.append(sponsor_list, sponsorpage.sponsor_list)
+  try response_json: String = graphql.call_api(token, query)
+  let response_json: Dynamic = json.decode(response_json)
+
+  try sponsorpage: Sponsorspage =
+    sponsor.decode_page(response_json)
+    |> result.map_error(decode_error_to_string)
+  let sponsor_list: List(Sponsor) =
+    list.append(sponsor_list, sponsorpage.sponsor_list)
   case sponsorpage.nextpage_cursor {
     Ok(cursor) -> {
       let cursor_opt = option.Some(cursor)

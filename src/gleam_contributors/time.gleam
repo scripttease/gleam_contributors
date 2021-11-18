@@ -1,4 +1,4 @@
-import gleam/dynamic.{Dynamic}
+import gleam/dynamic.{DecodeError, Dynamic}
 
 /// Erlang library for datetime
 pub external fn now() -> #(Int, Int, Int) =
@@ -8,7 +8,7 @@ pub external fn iso_format(#(Int, Int, Int)) -> String =
   "iso8601" "format"
 
 // Converts response json to datetime string.
-pub fn decode_iso_datetime(payload: Dynamic) -> Result(String, String) {
+pub fn decode_iso_datetime(payload: Dynamic) -> Result(String, DecodeError) {
   try data = dynamic.field(payload, "data")
   try repo = dynamic.field(data, "repository")
   try release = dynamic.field(repo, "release")
