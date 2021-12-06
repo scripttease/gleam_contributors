@@ -336,6 +336,7 @@ fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
     resp
     |> json.decode
     |> repo.decode_organisation_repos(org)
+    |> result.map_error(decode_error_to_string)
   }
 
   try orgs = list.try_map(["gleam-lang", "gleam-experiments"], get_repos)
