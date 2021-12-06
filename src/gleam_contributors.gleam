@@ -1,6 +1,3 @@
-// Import Gleam StdLib modules here.
-// To add an Erlang library, add deps to rebar.config, AND require lib in
-// gleam_contributors.app.src To use them create an external fn.
 import gleam/erlang
 import gleam/result
 import gleam/string
