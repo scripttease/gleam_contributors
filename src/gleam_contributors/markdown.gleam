@@ -10,7 +10,7 @@ pub fn unordered_list(contributors: List(String)) -> String {
     list.fold(
       contributors,
       "",
-      fn(elem, acc) {
+      fn(acc, elem) {
         acc
         |> string.append("\n - ")
         |> string.append(elem)
