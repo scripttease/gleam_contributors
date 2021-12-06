@@ -5,8 +5,13 @@ import gleam_contributors/graphql
 import gleam_contributors/json
 import gleam_contributors/time
 import gleam/option.{Some}
-import gleam/should
 import gleam/set
+import gleeunit
+import gleeunit/should
+
+pub fn main() {
+  gleeunit.main()
+}
 
 pub fn parse_sponsor_empty_with_cursor_test() {
   let payload =
