@@ -141,7 +141,7 @@ pub type WebsiteTiers {
 }
 
 fn website_tiers(sponsors: List(Sponsor)) -> WebsiteTiers {
-  let fold = fn(sponsor: Sponsor, acc: WebsiteTiers) {
+  let fold = fn(acc: WebsiteTiers, sponsor: Sponsor) {
     case sponsor.cents / 100 {
       dollars if dollars >= 100 ->
         WebsiteTiers(..acc, second: [sponsor, ..acc.second])
