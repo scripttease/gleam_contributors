@@ -216,7 +216,7 @@ pub fn remove_duplicates(sponsors_list: List(String)) -> Set(String) {
   list.fold(
     over: sponsors_list,
     from: set.new(),
-    with: fn(elem, acc) { set.insert(acc, elem) },
+    with: fn(acc, elem) { set.insert(acc, elem) },
   )
 }
 
