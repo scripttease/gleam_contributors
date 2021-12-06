@@ -137,8 +137,8 @@ pub fn filter_sponsors_test() {
   ]
   let dollars = 20
   gleam_contributors.filter_sponsors(lst, dollars)
-  |> // |> should.equal(["[Bruno Michel](https://github.com/nono)"])
-  should.equal([
+  // |> should.equal(["[Bruno Michel](https://github.com/nono)"])
+  |> should.equal([
     Sponsor(
       name: "Bruno Michel",
       github: "https://github.com/nono",
@@ -205,14 +205,14 @@ pub fn filter_sponsors_many_unordered_500c() {
   ]
   let dollars = 50
   gleam_contributors.filter_sponsors(lst, dollars)
-  |> // |> should.equal(
+  // |> should.equal(
   //   [
   //     "[Chris Young](https://github.com/worldofchris)",
   //     "[Jose Valim](https://github.com/josevalim)",
   //     "[Scripttease](https://github.com/scripttease)",
   //   ],
   // )
-  should.equal([
+  |> should.equal([
     Sponsor(
       name: "Chris Young",
       avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
