@@ -71,7 +71,7 @@ fn call_api_for_datetimes(
       let query_to: String = graphql.construct_release_query(to_version)
       try response_json: String = graphql.call_api(token, query_to)
       time.decode_iso_datetime(json.decode(response_json))
-      // returns Result(String DecodeError)
+      // returns Result(String, DecodeError)
       |> result.map_error(decode_error_to_string)
     }
     None -> Ok(time.iso_format(time.now()))
@@ -274,7 +274,9 @@ fn request_and_parse_contributors(
     )
 
   try response_json = graphql.call_api(token, query)
-  try contributorpage = contributor.decode_page(response_json)
+  try contributorpage =
+    contributor.decode_page(response_json)
+    |> result.map_error(decode_error_to_string)
   Ok(contributorpage)
 }
 
