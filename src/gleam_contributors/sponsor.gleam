@@ -25,28 +25,25 @@ pub type Sponsorspage {
 
 /// Decodes sponsor section of the response JSON (List of maps)
 ///
-pub fn decode(json_obj: Dynamic) -> Result(Sponsor, DecodeError) {
-  try entity = dynamic.field(json_obj, "sponsorEntity")
+pub fn decode(json_obj: Dynamic) -> Result(Sponsor, List(DecodeError)) {
+  try entity = dynamic.field("sponsorEntity", Ok)(json_obj)
 
-  try dynamic_github = dynamic.field(entity, "url")
-  try github = dynamic.string(dynamic_github)
-  try dynamic_name = dynamic.field(entity, "name")
+  try github = dynamic.field("url", dynamic.string)(entity)
   try name =
-    dynamic.string(dynamic_name)
+    dynamic.field("name", dynamic.string)(entity)
     |> result.or(Ok(string.slice(
       from: github,
       at_index: string.length("https://github.com/"),
       length: 1000,
     )))
-  try dynamic_avatar = dynamic.field(entity, "avatarUrl")
-  try avatar = dynamic.string(dynamic_avatar)
-  try dynamic_website = dynamic.field(entity, "websiteUrl")
+  try avatar = dynamic.field("avatarUrl", dynamic.string)(entity)
   let website =
-    dynamic.string(dynamic_website)
+    dynamic.field("websiteUrl", dynamic.string)(entity)
     |> result.map_error(fn(_) { Nil })
-  try tier = dynamic.field(json_obj, "tier")
-  try dynamic_cents = dynamic.field(tier, "monthlyPriceInCents")
-  try cents = dynamic.int(dynamic_cents)
+  try cents =
+    dynamic.field("tier", dynamic.field("monthlyPriceInCents", dynamic.int))(
+      json_obj,
+    )
   Ok(Sponsor(
     name: name,
     github: github,
@@ -57,26 +54,22 @@ pub fn decode(json_obj: Dynamic) -> Result(Sponsor, DecodeError) {
 }
 
 // Takes response json string and returns a Sponsorspage
-pub fn decode_page(sponsors: Dynamic) -> Result(Sponsorspage, DecodeError) {
+pub fn decode_page(sponsors: Dynamic) -> Result(Sponsorspage, List(DecodeError)) {
   // TODO error message string?
   // only returns if result(Ok(_))
   // only called if there is no nextpage, ie result -> Error(Nil)
-  try data = dynamic.field(sponsors, "data")
-
-  try user = dynamic.field(data, "user")
-  try spons = dynamic.field(user, "sponsorshipsAsMaintainer")
-  try page = dynamic.field(spons, "pageInfo")
-  try dynamic_nextpage = dynamic.field(page, "hasNextPage")
-  try nextpage = dynamic.bool(dynamic_nextpage)
+  try data = dynamic.field("data", Ok)(sponsors)
+  try user = dynamic.field("user", Ok)(data)
+  try spons = dynamic.field("sponsorshipsAsMaintainer", Ok)(user)
+  try page = dynamic.field("pageInfo", Ok)(spons)
+  try nextpage = dynamic.field("hasNextPage", dynamic.bool)(page)
   let cursor = case nextpage {
     False -> Error(Nil)
     True ->
-      dynamic.field(page, "endCursor")
-      |> result.then(dynamic.string)
+      dynamic.field("endCursor", dynamic.string)(page)
       |> result.map_error(fn(_) { Nil })
   }
-  try nodes = dynamic.field(spons, "nodes")
-  try sponsors = dynamic.typed_list(nodes, of: decode)
+  try sponsors = dynamic.field("nodes", dynamic.list(decode))(spons)
   Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
 }
 

@@ -8,13 +8,24 @@ pub external fn iso_format(#(Int, Int, Int)) -> String =
   "iso8601" "format"
 
 // Converts response json to datetime string.
-pub fn decode_iso_datetime(payload: Dynamic) -> Result(String, DecodeError) {
-  try data = dynamic.field(payload, "data")
-  try repo = dynamic.field(data, "repository")
-  try release = dynamic.field(repo, "release")
-  try tag = dynamic.field(release, "tag")
-  try target = dynamic.field(tag, "target")
-  try dynamic_date = dynamic.field(target, "committedDate")
-  try date = dynamic.string(dynamic_date)
-  Ok(date)
+pub fn decode_iso_datetime(
+  payload: Dynamic,
+) -> Result(String, List(DecodeError)) {
+  payload
+  |> dynamic.field(
+    "data",
+    dynamic.field(
+      "repository",
+      dynamic.field(
+        "release",
+        dynamic.field(
+          "tag",
+          dynamic.field(
+            "target",
+            dynamic.field("committedDate", dynamic.string),
+          ),
+        ),
+      ),
+    ),
+  )
 }

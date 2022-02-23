@@ -49,13 +49,18 @@ fn write_file(filename: String, content: String) -> Result(String, String) {
   }
 }
 
-fn decode_error_to_string(error: DecodeError) -> String {
-  string.concat([
-    "DecodeError Expected: ",
-    error.expected,
-    ", got: ",
-    error.found,
-  ])
+fn decode_error_to_string(errors: List(DecodeError)) -> String {
+  errors
+  |> list.map(fn(error: DecodeError) {
+    string.concat([
+      "DecodeError Expected: ",
+      error.expected,
+      ", got: ",
+      error.found,
+      "\n",
+    ])
+  })
+  |> string.concat()
 }
 
 // Calls API with versions and gets datetimes for the version release dates

@@ -8,19 +8,25 @@ pub type Repo {
 // TODO Add nextpage cursor for when number of repos exceed 100 results
 pub fn decode_organisation_repos(
   repos_json: Dynamic,
-  org_n: String,
-) -> Result(List(Repo), DecodeError) {
-  try data = dynamic.field(repos_json, "data")
-
-  try org = dynamic.field(data, "organization")
-  try repos = dynamic.field(org, "repositories")
-  try nodes = dynamic.field(repos, "nodes")
-  let name_field = fn(repo) {
-    try dynamic_name = dynamic.field(repo, "name")
-    dynamic.string(dynamic_name)
+  org_name: String,
+) -> Result(List(Repo), List(DecodeError)) {
+  let repo = fn(data) {
+    try name = dynamic.field("name", dynamic.string)(data)
+    Ok(Repo(org_name, name))
   }
-  try repo_string_list = dynamic.typed_list(nodes, of: name_field)
-  let list_repo =
-    list.map(repo_string_list, fn(string) { Repo(org: org_n, name: string) })
-  Ok(list_repo)
+
+  let repos =
+    dynamic.field(
+      "data",
+      dynamic.field(
+        "organization",
+        dynamic.field(
+          "repositories",
+          dynamic.field("nodes", dynamic.list(of: repo)),
+        ),
+      ),
+    )
+
+  repos_json
+  |> repos
 }
