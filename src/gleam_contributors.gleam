@@ -140,30 +140,19 @@ fn call_api_for_sponsors(
 }
 
 pub type WebsiteTiers {
-  WebsiteTiers(first: List(Sponsor), second: List(Sponsor))
-}
-
-fn website_tiers(sponsors: List(Sponsor)) -> WebsiteTiers {
-  let fold = fn(acc: WebsiteTiers, sponsor: Sponsor) {
-    case sponsor.cents / 100 {
-      dollars if dollars >= 100 ->
-        WebsiteTiers(..acc, second: [sponsor, ..acc.second])
-
-      dollars if dollars >= 20 ->
-        WebsiteTiers(..acc, first: [sponsor, ..acc.first])
-
-      _otherwise -> acc
-    }
-  }
-  list.fold(sponsors, WebsiteTiers([], []), fold)
+  WebsiteTiers(
+    first: List(Sponsor),
+    second: List(Sponsor),
+    third: List(Sponsor),
+    fourth: List(Sponsor),
+  )
 }
 
 fn website_yaml(token: String, filename: String) -> Result(String, String) {
   io.println("Calling Sponsors API")
   try sponsors = call_api_for_sponsors(token, option.None, [])
-  let tiers = website_tiers(sponsors)
-  [#("first_tier", tiers.first), #("second_tier", tiers.second)]
-  |> yaml.sponsors_tiers
+  sponsors
+  |> yaml.sponsors
   |> write_file(filename, _)
 }
 

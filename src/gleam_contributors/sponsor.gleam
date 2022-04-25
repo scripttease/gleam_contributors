@@ -79,7 +79,6 @@ pub fn display_name(sponsor: Sponsor) -> String {
   case sponsor.github {
     "https://github.com/ktec" -> "Clever Bunny LTD"
     "https://github.com/varnerac" -> "NineFX"
-    "https://github.com/CrowdHailer" -> "Memo"
     _ -> sponsor.name
   }
 }
@@ -104,7 +103,6 @@ pub fn display_link(sponsor: Sponsor) -> String {
     "https://github.com/ktec" -> "https://github.com/cleverbunny"
     "https://github.com/skunkwerks" -> website
     "https://github.com/varnerac" -> website
-    "https://github.com/CrowdHailer" -> "https://sendmemo.app"
     _ -> sponsor.github
   }
 }
@@ -115,8 +113,15 @@ pub fn display_avatar(sponsor: Sponsor) -> String {
   case sponsor.github {
     "https://github.com/varnerac" ->
       "https://gleam.run/images/sponsors/nine-fx.png"
-    "https://github.com/CrowdHailer" ->
-      "https://gleam.run/images/sponsors/memo.png"
     _ -> sponsor.avatar
+  }
+}
+
+pub fn tier(sponsor: Sponsor) -> Int {
+  case sponsor.cents / 100 {
+    dollars if dollars >= 1000 -> 4
+    dollars if dollars >= 100 -> 3
+    dollars if dollars >= 20 -> 2
+    _otherwise -> 1
   }
 }
