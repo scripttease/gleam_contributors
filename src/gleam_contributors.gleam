@@ -351,9 +351,6 @@ fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
 // Args from command line are actually an Erlang Charlist not strings, so they need to be converted.
 pub external type Charlist
 
-external fn charlist_to_string(Charlist) -> String =
-  "erlang" "list_to_binary"
-
 fn call_api_for_all_contributors(token, from, to) {
   try list_repos = call_api_for_repos(token)
   list_repos

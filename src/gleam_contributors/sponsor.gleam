@@ -84,6 +84,18 @@ pub fn display_name(sponsor: Sponsor) -> String {
   }
 }
 
+// Some sponsors have an avatar that would look good not in a circle on the
+// website.
+pub fn square_avatar(sponsor: Sponsor) -> Bool {
+  case sponsor.github {
+    "https://github.com/skunkwerks" -> True
+    "https://github.com/smartlogic" -> True
+    "https://github.com/hypno2000" -> True
+    "https://github.com/varnerac" -> True
+    _ -> False
+  }
+}
+
 // Some sponsors wish to display their link differently, so override it for
 // these people.
 pub fn display_link(sponsor: Sponsor) -> String {

@@ -1,5 +1,4 @@
 import gleam/dynamic.{DecodeError, Dynamic}
-import gleam/list
 
 pub type Repo {
   Repo(org: String, name: String)

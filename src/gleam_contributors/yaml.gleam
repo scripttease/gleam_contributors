@@ -17,7 +17,12 @@ fn nested_sponsor_list_entry(sponsor: Sponsor) -> StringBuilder {
     sponsor.display_link(sponsor),
     "\"\n  avatar: \"",
     sponsor.display_avatar(sponsor),
-    "\"\n",
+    "\"\n  square_avatar: ",
+    case sponsor.square_avatar(sponsor) {
+      True -> "true"
+      False -> "false"
+    },
+    "\n",
   ]
   |> string_builder.from_strings
 }
