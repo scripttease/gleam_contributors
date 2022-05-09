@@ -171,8 +171,7 @@ fn readme_list(token: String, filename: String) -> Result(String, String) {
   try part_one =
     list.first(parts)
     |> result.map_error(fn(_) { "Could not split file." })
-  let sponsors100 = filter_sponsors(sponsors, 10)
-  let str_lst_sponsors = list_sponsor_to_list_string(sponsors100)
+  let str_lst_sponsors = list_sponsor_to_list_string(sponsors)
   let output_sponsors = markdown.unordered_list(str_lst_sponsors)
   let gen_readme = string.concat([part_one, splitter, "\n", output_sponsors])
   io.println("Writing edited content to target file")
