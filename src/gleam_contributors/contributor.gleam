@@ -27,7 +27,10 @@ pub fn decode(json_obj: Dynamic) -> Result(Contributor, List(DecodeError)) {
       "author",
       dynamic.field(
         "user",
-        dynamic.field("url", dynamic.optional(dynamic.string)),
+        dynamic.any([
+          dynamic.field("url", dynamic.optional(dynamic.string)),
+          fn(_) { Ok(option.None) },
+        ]),
       ),
     ),
   )
@@ -51,6 +54,7 @@ pub fn decode_page(
 
   try pageinfo = dynamic.field("pageInfo", Ok)(history)
   try nextpage = dynamic.field("hasNextPage", dynamic.bool)(pageinfo)
+
   let cursor = case nextpage {
     False -> Error(Nil)
     True ->

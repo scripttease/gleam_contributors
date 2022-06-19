@@ -4,7 +4,7 @@ import gleam_contributors/contributor.{Contributor, Contributorspage}
 import gleam_contributors/graphql
 import gleam_contributors/json
 import gleam_contributors/time
-import gleam/option.{Some}
+import gleam/option.{None, Some}
 import gleam/set
 import gleeunit
 import gleeunit/should
@@ -610,6 +610,41 @@ pub fn parse_contributors_test() {
         github: Some("https://github.com/QuinnWilton"),
       ),
     ],
+  )))
+}
+
+pub fn parse_url_is_optional_test() {
+  let json =
+    "
+{
+  \"data\": {
+    \"repository\": {
+      \"object\": {
+        \"history\": {
+          \"totalCount\": 1285,
+          \"pageInfo\": {
+            \"hasNextPage\": true,
+            \"endCursor\": \"3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4\"
+          },
+          \"nodes\": [
+            {
+              \"author\": {
+                \"name\": \"Louis Pilfold\",
+                \"user\": null
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}
+  "
+
+  contributor.decode_page(json)
+  |> should.equal(Ok(Contributorspage(
+    nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
+    contributor_list: [Contributor(name: "Louis Pilfold", github: None)],
   )))
 }
 
