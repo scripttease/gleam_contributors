@@ -101,6 +101,7 @@ pub fn display_link(sponsor: Sponsor) -> String {
   let website = result.unwrap(sponsor.website, sponsor.github)
   case sponsor.github {
     "https://github.com/ktec" -> "https://github.com/cleverbunny"
+    "https://github.com/team-alembic" -> website
     "https://github.com/skunkwerks" -> website
     "https://github.com/varnerac" -> website
     _ -> sponsor.github
