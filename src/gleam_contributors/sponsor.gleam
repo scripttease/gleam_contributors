@@ -120,7 +120,8 @@ pub fn display_avatar(sponsor: Sponsor) -> String {
 
 pub fn tier(sponsor: Sponsor) -> Int {
   case sponsor.cents / 100 {
-    dollars if dollars >= 1000 -> 4
+    dollars if dollars >= 1000 -> 5
+    dollars if dollars >= 500 -> 4
     dollars if dollars >= 100 -> 3
     dollars if dollars >= 20 -> 2
     _otherwise -> 1
