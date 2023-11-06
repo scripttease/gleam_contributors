@@ -1,66 +1,24 @@
 import gleam/erlang
 import gleam/result
 import gleam/string
-import gleam/set.{Set}
+import gleam/set.{type Set}
 import gleam/list
 import gleam/io
-import gleam/option.{None, Option, Some}
-import gleam_contributors/json
+import gleam/option.{type Option, None, Some}
+import gleam/json
+import simplifile
 import gleam_contributors/time
-import gleam_contributors/repo.{Repo}
+import gleam_contributors/repo.{type Repo}
 import gleam_contributors/graphql
 import gleam_contributors/markdown
 import gleam_contributors/yaml
-import gleam_contributors/sponsor.{Sponsor, Sponsorspage}
-import gleam_contributors/contributor.{Contributor}
+import gleam_contributors/sponsor.{type Sponsor, type Sponsorspage}
+import gleam_contributors/contributor.{type Contributor}
 import gleam_contributors/attributee
-import gleam/dynamic.{DecodeError, Dynamic}
 
-external type OkAtom
-
-// Naming the application for Erlang to start processes required in app, such as
-// inets. Will convert Camel to Snake case.
-type Application {
-  GleamContributors
-}
-
-//Erlang module Application fn ensure_all_started, see above
-external fn start_application_and_deps(Application) -> OkAtom =
-  "application" "ensure_all_started"
-
-//TODO err is atom type not string, import gleam atom then if need error convert atom to string
-external fn read_file(filename: String) -> Result(String, String) =
-  "file" "read_file"
-
-//TODO error is atom type not string, import gleam atom then if need error convert atom to string
-//TODO Correct return type
-external fn erlang_write_file(
-  filename: String,
-  content: String,
-) -> Result(String, String) =
-  "file" "write_file"
-
-fn write_file(filename: String, content: String) -> Result(String, String) {
-  // The write_file Erlang fn does NOT return a result so we need to hack it
-  // until there are better bindings to the file IO library.
-  case erlang_write_file(filename, content) {
-    Error(e) -> Error(e)
-    _ -> Ok("")
-  }
-}
-
-fn decode_error_to_string(errors: List(DecodeError)) -> String {
-  errors
-  |> list.map(fn(error: DecodeError) {
-    string.concat([
-      "DecodeError Expected: ",
-      error.expected,
-      ", got: ",
-      error.found,
-      "\n",
-    ])
-  })
-  |> string.concat()
+fn write_file(filename: String, content: String) -> Result(Nil, String) {
+  simplifile.write(content, to: filename)
+  |> result.map_error(string.inspect)
 }
 
 // Calls API with versions and gets datetimes for the version release dates
@@ -69,23 +27,23 @@ fn call_api_for_datetimes(
   from_version: String,
   to_version: Option(String),
 ) -> Result(#(String, String), String) {
-  try to_datetime = case to_version {
+  use to_datetime <- result.try(case to_version {
     Some(to_version) -> {
       let query_to: String = graphql.construct_release_query(to_version)
-      try response_json: String = graphql.call_api(token, query_to)
-      time.decode_iso_datetime(json.decode(response_json))
-      // returns Result(String, DecodeError)
-      |> result.map_error(decode_error_to_string)
+      use response_json: String <- result.try(graphql.call_api(token, query_to))
+      json.decode(response_json, time.decode_iso_datetime)
+      |> result.map_error(string.inspect)
     }
     None -> Ok(time.iso_format(time.now()))
-  }
+  })
 
   let query_from = graphql.construct_release_query(from_version)
 
-  try response_json = graphql.call_api(token, query_from)
-  try from_datetime =
-    time.decode_iso_datetime(json.decode(response_json))
-    |> result.map_error(decode_error_to_string)
+  use response_json <- result.try(graphql.call_api(token, query_from))
+  use from_datetime <- result.try(
+    json.decode(response_json, time.decode_iso_datetime)
+    |> result.map_error(string.inspect),
+  )
   Ok(#(from_datetime, to_datetime))
 }
 
@@ -122,12 +80,12 @@ fn call_api_for_sponsors(
 
   //The sponsor_list acts as an accumluator on the recursive call of the fn,
   //and is therefore passed in as an arg.
-  try response_json: String = graphql.call_api(token, query)
-  let response_json: Dynamic = json.decode(response_json)
+  use response_json: String <- result.try(graphql.call_api(token, query))
+  use sponsorpage: Sponsorspage <- result.try(
+    json.decode(response_json, sponsor.decode_page)
+    |> result.map_error(string.inspect),
+  )
 
-  try sponsorpage: Sponsorspage =
-    sponsor.decode_page(response_json)
-    |> result.map_error(decode_error_to_string)
   let sponsor_list: List(Sponsor) =
     list.append(sponsor_list, sponsorpage.sponsor_list)
   case sponsorpage.nextpage_cursor {
@@ -148,29 +106,33 @@ pub type WebsiteTiers {
   )
 }
 
-fn website_yaml(token: String, filename: String) -> Result(String, String) {
+fn website_yaml(token: String, filename: String) -> Result(Nil, String) {
   io.println("Calling Sponsors API")
-  try sponsors = call_api_for_sponsors(token, option.None, [])
+  use sponsors <- result.try(call_api_for_sponsors(token, option.None, []))
   sponsors
   |> yaml.sponsors
   |> write_file(filename, _)
 }
 
-fn readme_list(token: String, filename: String) -> Result(String, String) {
+fn readme_list(token: String, filename: String) -> Result(Nil, String) {
   io.println("Calling Sponsors API")
 
   // Get sponsors over $10 for generated readme section
   // recombine partone with the autogenerated bit and sponsors into a string
   // write to file
-  try sponsors = call_api_for_sponsors(token, option.None, [])
+  use sponsors <- result.try(call_api_for_sponsors(token, option.None, []))
   io.println("Reading target file")
-  try file = read_file(filename)
+  use file <- result.try(
+    simplifile.read(filename)
+    |> result.map_error(string.inspect),
+  )
   io.println("Editing file contents")
   let splitter = "<!-- Below this line this file is autogenerated -->"
   let parts = string.split(file, splitter)
-  try part_one =
+  use part_one <- result.try(
     list.first(parts)
-    |> result.map_error(fn(_) { "Could not split file." })
+    |> result.map_error(fn(_) { "Could not split file." }),
+  )
   let str_lst_sponsors = list_sponsor_to_list_string(sponsors)
   let output_sponsors = markdown.unordered_list(str_lst_sponsors)
   let gen_readme = string.concat([part_one, splitter, "\n", output_sponsors])
@@ -183,13 +145,20 @@ fn parse_args(args: List(String)) -> Result(#(String, String, String), String) {
   case args {
     [token, from_version, to_version] -> {
       // From and to dates from version numbers
-      try datetimes =
-        call_api_for_datetimes(token, from_version, Some(to_version))
+      use datetimes <- result.try(call_api_for_datetimes(
+        token,
+        from_version,
+        Some(to_version),
+      ))
       let #(from, to) = datetimes
       Ok(#(token, from, to))
     }
     [token, from_version] -> {
-      try datetimes = call_api_for_datetimes(token, from_version, None)
+      use datetimes <- result.try(call_api_for_datetimes(
+        token,
+        from_version,
+        None,
+      ))
       let #(from, to) = datetimes
       Ok(#(token, from, to))
     }
@@ -241,7 +210,7 @@ pub fn filter_creator_from_contributors(
     contributor.github != Some("https://github.com/lpil")
   }
 
-  list.filter(contributor, for: isnt_louis)
+  list.filter(contributor, keeping: isnt_louis)
 }
 
 fn request_and_parse_contributors(
@@ -264,10 +233,11 @@ fn request_and_parse_contributors(
       branch,
     )
 
-  try response_json = graphql.call_api(token, query)
-  try contributorpage =
+  use response_json <- result.try(graphql.call_api(token, query))
+  use contributorpage <- result.try(
     contributor.decode_page(response_json)
-    |> result.map_error(decode_error_to_string)
+    |> result.map_error(string.inspect),
+  )
   Ok(contributorpage)
 }
 
@@ -296,10 +266,10 @@ fn call_api_for_contributors(
     )
   }
 
-  try contributorpage = case fetch_and_parse("main") {
+  use contributorpage <- result.try(case fetch_and_parse("main") {
     Ok(data) -> Ok(data)
     Error(_) -> fetch_and_parse("master")
-  }
+  })
   let contributor_list =
     list.append(contributor_list, contributorpage.contributor_list)
   case contributorpage.nextpage_cursor {
@@ -323,24 +293,23 @@ fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
   let get_repos = fn(org) {
     io.println(string.append("Calling API to get repos in ", org))
     let query = graphql.construct_repo_query(org)
-    try resp = graphql.call_api(token, query)
+    use resp <- result.try(graphql.call_api(token, query))
     resp
-    |> json.decode
-    |> repo.decode_organisation_repos(org)
-    |> result.map_error(decode_error_to_string)
+    |> json.decode(repo.decode_organisation_repos(_, org))
+    |> result.map_error(string.inspect)
   }
 
-  try orgs = list.try_map(["gleam-lang", "gleam-experiments"], get_repos)
+  use orgs <- result.try(list.try_map(
+    ["gleam-lang", "gleam-experiments"],
+    get_repos,
+  ))
   orgs
   |> list.fold([], list.append)
   |> Ok
 }
 
-// Args from command line are actually an Erlang Charlist not strings, so they need to be converted.
-pub external type Charlist
-
 fn call_api_for_all_contributors(token, from, to) {
-  try list_repos = call_api_for_repos(token)
+  use list_repos <- result.try(call_api_for_repos(token))
   list_repos
   |> list.try_map(fn(repo: Repo) {
     call_api_for_contributors(
@@ -355,27 +324,34 @@ fn call_api_for_all_contributors(token, from, to) {
   })
 }
 
-fn print_combined_sponsors_and_contributors(args: List(String)) {
+fn print_combined_sponsors_and_contributors(
+  args: List(String),
+) -> Result(Nil, String) {
   // Parses command line arguments
   // Call API for sponsors and contribtors
   // Join the sponsors and contributors together as attributees
-  try #(token, from, to) = parse_args(args)
+  use #(token, from, to) <- result.try(parse_args(args))
 
-  try sponsors = call_api_for_sponsors(token, option.None, [])
-  try contributors = call_api_for_all_contributors(token, from, to)
+  use sponsors <- result.try(call_api_for_sponsors(token, option.None, []))
+  use contributors <- result.try(call_api_for_all_contributors(token, from, to))
   let contributors =
     contributors
     |> list.flatten
     |> filter_creator_from_contributors
     |> list.map(attributee.from_contributor)
   let sponsors = list.map(sponsors, attributee.from_sponsor)
-  sponsors
-  |> list.append(contributors)
-  |> attributee.deduplicate
-  |> attributee.sort_by_name
-  |> list.map(attributee.to_markdown_link)
-  |> markdown.unordered_list
-  |> Ok
+
+  let text =
+    sponsors
+    |> list.append(contributors)
+    |> attributee.deduplicate
+    |> attributee.sort_by_name
+    |> list.map(attributee.to_markdown_link)
+    |> markdown.unordered_list
+
+  io.println(text)
+
+  Ok(Nil)
 }
 
 // Entrypoint fn for Erlang escriptize. Must be called `main`. Takes a
@@ -383,7 +359,6 @@ fn print_combined_sponsors_and_contributors(args: List(String)) {
 // Top level, handles error-handling
 pub fn main() -> Nil {
   let args = erlang.start_arguments()
-  start_application_and_deps(GleamContributors)
   io.println("Erlang applications started")
 
   let result = case args {
@@ -393,8 +368,7 @@ pub fn main() -> Nil {
   }
 
   case result {
-    Ok(res) -> {
-      io.print(res)
+    Ok(Nil) -> {
       io.println("Done!")
     }
     Error(e) -> {

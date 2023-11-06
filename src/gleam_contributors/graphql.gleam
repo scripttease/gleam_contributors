@@ -1,24 +1,23 @@
-import gleam/option.{Option}
+import gleam/option.{type Option}
 import gleam/string
-import gleam/map
 import gleam/io
 import gleam/httpc
 import gleam/http.{Post}
-import gleam_contributors/json
+import gleam/http/request
+import gleam/json
 
 /// Calls the Github API v4 (GraphQL)
 pub fn call_api(token: String, query: String) -> Result(String, String) {
-  let body = map.from_list([#("query", query)])
+  let body = json.object([#("query", json.string(query))])
 
+  let assert Ok(request) = request.to("https://api.github.com/graphql")
   let result =
-    http.default_req()
-    |> http.set_method(Post)
-    |> http.set_host("api.github.com")
-    |> http.set_path("/graphql")
-    |> http.prepend_req_header("user-agent", "gleam contributors")
-    |> http.prepend_req_header("authorization", string.append("bearer ", token))
-    |> http.prepend_req_header("content-type", "application/json")
-    |> http.set_req_body(json.encode(body))
+    request
+    |> request.set_method(Post)
+    |> request.prepend_header("user-agent", "gleam contributors")
+    |> request.prepend_header("authorization", string.append("bearer ", token))
+    |> request.prepend_header("content-type", "application/json")
+    |> request.set_body(json.to_string(body))
     |> httpc.send
   // TODO error(e)
   let response = case result {

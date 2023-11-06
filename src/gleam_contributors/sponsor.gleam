@@ -1,4 +1,4 @@
-import gleam/dynamic.{DecodeError, Dynamic}
+import gleam/dynamic.{type DecodeError, type Dynamic}
 import gleam/result
 import gleam/string
 
@@ -26,24 +26,25 @@ pub type Sponsorspage {
 /// Decodes sponsor section of the response JSON (List of maps)
 ///
 pub fn decode(json_obj: Dynamic) -> Result(Sponsor, List(DecodeError)) {
-  try entity = dynamic.field("sponsorEntity", Ok)(json_obj)
+  use entity <- result.try(dynamic.field("sponsorEntity", Ok)(json_obj))
 
-  try github = dynamic.field("url", dynamic.string)(entity)
-  try name =
+  use github <- result.try(dynamic.field("url", dynamic.string)(entity))
+  use name <- result.try(
     dynamic.field("name", dynamic.string)(entity)
     |> result.or(Ok(string.slice(
       from: github,
       at_index: string.length("https://github.com/"),
       length: 1000,
-    )))
-  try avatar = dynamic.field("avatarUrl", dynamic.string)(entity)
+    ))),
+  )
+  use avatar <- result.try(dynamic.field("avatarUrl", dynamic.string)(entity))
   let website =
     dynamic.field("websiteUrl", dynamic.string)(entity)
     |> result.map_error(fn(_) { Nil })
-  try cents =
-    dynamic.field("tier", dynamic.field("monthlyPriceInCents", dynamic.int))(
-      json_obj,
-    )
+  use cents <- result.try(dynamic.field(
+    "tier",
+    dynamic.field("monthlyPriceInCents", dynamic.int),
+  )(json_obj))
   Ok(Sponsor(
     name: name,
     github: github,
@@ -58,18 +59,18 @@ pub fn decode_page(sponsors: Dynamic) -> Result(Sponsorspage, List(DecodeError))
   // TODO error message string?
   // only returns if result(Ok(_))
   // only called if there is no nextpage, ie result -> Error(Nil)
-  try data = dynamic.field("data", Ok)(sponsors)
-  try user = dynamic.field("user", Ok)(data)
-  try spons = dynamic.field("sponsorshipsAsMaintainer", Ok)(user)
-  try page = dynamic.field("pageInfo", Ok)(spons)
-  try nextpage = dynamic.field("hasNextPage", dynamic.bool)(page)
+  use data <- result.try(dynamic.field("data", Ok)(sponsors))
+  use user <- result.try(dynamic.field("user", Ok)(data))
+  use spons <- result.try(dynamic.field("sponsorshipsAsMaintainer", Ok)(user))
+  use page <- result.try(dynamic.field("pageInfo", Ok)(spons))
+  use nextpage <- result.try(dynamic.field("hasNextPage", dynamic.bool)(page))
   let cursor = case nextpage {
     False -> Error(Nil)
     True ->
       dynamic.field("endCursor", dynamic.string)(page)
       |> result.map_error(fn(_) { Nil })
   }
-  try sponsors = dynamic.field("nodes", dynamic.list(decode))(spons)
+  use sponsors <- result.try(dynamic.field("nodes", dynamic.list(decode))(spons))
   Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
 }
 

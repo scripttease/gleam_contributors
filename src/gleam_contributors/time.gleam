@@ -1,11 +1,11 @@
-import gleam/dynamic.{DecodeError, Dynamic}
+import gleam/dynamic.{type DecodeError, type Dynamic}
 
 /// Erlang library for datetime
-pub external fn now() -> #(Int, Int, Int) =
-  "calendar" "universal_time"
+@external(erlang, "calendar", "universal_time")
+pub fn now() -> #(Int, Int, Int)
 
-pub external fn iso_format(#(Int, Int, Int)) -> String =
-  "iso8601" "format"
+@external(erlang, "iso8601", "format")
+pub fn iso_format(date: #(Int, Int, Int)) -> String
 
 // Converts response json to datetime string.
 pub fn decode_iso_datetime(

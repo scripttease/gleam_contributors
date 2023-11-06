@@ -1,7 +1,7 @@
 import gleam/int
 import gleam/list
-import gleam/string_builder.{StringBuilder}
-import gleam_contributors/sponsor.{Sponsor}
+import gleam/string_builder.{type StringBuilder}
+import gleam_contributors/sponsor.{type Sponsor}
 
 pub fn sponsors(sponsors: List(Sponsor)) -> String {
   sponsors

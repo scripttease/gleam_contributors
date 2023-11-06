@@ -1,7 +1,7 @@
 import gleam/result
-import gleam/option.{Option}
-import gleam/dynamic.{DecodeError, Dynamic}
-import gleam_contributors/json
+import gleam/option.{type Option}
+import gleam/dynamic.{type DecodeError, type Dynamic}
+import gleam/json
 
 pub type Contributor {
   Contributor(name: String, github: Option(String))
@@ -39,29 +39,34 @@ pub fn decode(json_obj: Dynamic) -> Result(Contributor, List(DecodeError)) {
 /// Converts response json into Gleam type. Represents one page of contributors
 pub fn decode_page(
   response_json: String,
-) -> Result(Contributorspage, List(DecodeError)) {
-  let res = json.decode(response_json)
-
-  try history =
-    res
-    |> dynamic.field(
+) -> Result(Contributorspage, json.DecodeError) {
+  let decoder = fn(data) {
+    use history <- result.try(dynamic.field(
       "data",
       dynamic.field(
         "repository",
         dynamic.field("object", dynamic.field("history", Ok)),
       ),
-    )
+    )(data))
 
-  try pageinfo = dynamic.field("pageInfo", Ok)(history)
-  try nextpage = dynamic.field("hasNextPage", dynamic.bool)(pageinfo)
+    use pageinfo <- result.try(dynamic.field("pageInfo", Ok)(history))
+    use nextpage <- result.try(dynamic.field("hasNextPage", dynamic.bool)(
+      pageinfo,
+    ))
 
-  let cursor = case nextpage {
-    False -> Error(Nil)
-    True ->
-      dynamic.field("endCursor", dynamic.string)(pageinfo)
-      |> result.map_error(fn(_) { Nil })
+    let cursor = case nextpage {
+      False -> Error(Nil)
+      True ->
+        dynamic.field("endCursor", dynamic.string)(pageinfo)
+        |> result.map_error(fn(_) { Nil })
+    }
+    use contributors <- result.try(dynamic.field(
+      "nodes",
+      dynamic.list(of: decode),
+    )(history))
+
+    Ok(Contributorspage(nextpage_cursor: cursor, contributor_list: contributors))
   }
-  try contributors = dynamic.field("nodes", dynamic.list(of: decode))(history)
 
-  Ok(Contributorspage(nextpage_cursor: cursor, contributor_list: contributors))
+  json.decode(response_json, decoder)
 }

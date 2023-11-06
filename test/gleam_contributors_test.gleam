@@ -2,7 +2,7 @@ import gleam_contributors
 import gleam_contributors/sponsor.{Sponsor, Sponsorspage}
 import gleam_contributors/contributor.{Contributor, Contributorspage}
 import gleam_contributors/graphql
-import gleam_contributors/json
+import gleam/json
 import gleam_contributors/time
 import gleam/option.{None, Some}
 import gleam/set
@@ -31,7 +31,7 @@ pub fn parse_sponsor_empty_with_cursor_test() {
 
   "
 
-  sponsor.decode_page(json.decode(payload))
+  json.decode(payload, sponsor.decode_page)
   |> should.equal(Ok(Sponsorspage(nextpage_cursor: Error(Nil), sponsor_list: [])))
 }
 
@@ -75,7 +75,7 @@ pub fn parse_sponsor_test() {
   }
 }
   "
-  sponsor.decode_page(json.decode(payload))
+  json.decode(payload, sponsor.decode_page)
   |> should.equal(Ok(Sponsorspage(
     nextpage_cursor: Ok("Mg"),
     sponsor_list: [
@@ -119,7 +119,8 @@ pub fn list_sponsor_to_list_string_test() {
   ]
   gleam_contributors.list_sponsor_to_list_string(lst)
   |> should.equal([
-    "[Bruno Michel](https://github.com/nono)", "[Chris Young](https://github.com/worldofchris)",
+    "[Bruno Michel](https://github.com/nono)",
+    "[Chris Young](https://github.com/worldofchris)",
   ])
 }
 
@@ -184,7 +185,7 @@ pub fn filter_sponsors_many_unordered_500c() {
       avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
       github: "https://github.com/worldofchris",
       website: Error(Nil),
-      cents: 50000,
+      cents: 50_000,
     ),
     Sponsor(
       name: "Bruno Michel",
@@ -198,14 +199,14 @@ pub fn filter_sponsors_many_unordered_500c() {
       avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
       github: "https://github.com/scripttease",
       website: Error(Nil),
-      cents: 50000,
+      cents: 50_000,
     ),
     Sponsor(
       name: "Jose Valim",
       avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
       github: "https://github.com/josevalim",
       website: Error(Nil),
-      cents: 10000,
+      cents: 10_000,
     ),
   ]
   let dollars = 50
@@ -223,21 +224,21 @@ pub fn filter_sponsors_many_unordered_500c() {
       avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
       github: "https://github.com/worldofchris",
       website: Error(Nil),
-      cents: 50000,
+      cents: 50_000,
     ),
     Sponsor(
       name: "Scripttease",
       avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
       github: "https://github.com/scripttease",
       website: Error(Nil),
-      cents: 50000,
+      cents: 50_000,
     ),
     Sponsor(
       name: "Jose Valim",
       avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
       github: "https://github.com/josevalim",
       website: Error(Nil),
-      cents: 10000,
+      cents: 10_000,
     ),
   ])
 }
@@ -393,8 +394,7 @@ pub fn parse_datetime_test() {
   }
 }
   "
-  |> json.decode
-  |> time.decode_iso_datetime
+  |> json.decode(time.decode_iso_datetime)
   |> should.equal(Ok("2020-05-19T16:09:23Z"))
 }
 
@@ -675,7 +675,8 @@ pub fn list_contributor_to_list_string_test() {
 
   gleam_contributors.list_contributor_to_list_string(lst)
   |> should.equal([
-    "[Louis Pilfold](https://github.com/lpil)", "[Quinn Wilton](https://github.com/QuinnWilton)",
+    "[Louis Pilfold](https://github.com/lpil)",
+    "[Quinn Wilton](https://github.com/QuinnWilton)",
     "[Tom Whatmore](https://github.com/tomwhatmore)",
   ])
 }

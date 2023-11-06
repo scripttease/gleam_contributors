@@ -1,4 +1,5 @@
-import gleam/dynamic.{DecodeError, Dynamic}
+import gleam/result
+import gleam/dynamic.{type DecodeError, type Dynamic}
 
 pub type Repo {
   Repo(org: String, name: String)
@@ -10,7 +11,7 @@ pub fn decode_organisation_repos(
   org_name: String,
 ) -> Result(List(Repo), List(DecodeError)) {
   let repo = fn(data) {
-    try name = dynamic.field("name", dynamic.string)(data)
+    use name <- result.try(dynamic.field("name", dynamic.string)(data))
     Ok(Repo(org_name, name))
   }
 

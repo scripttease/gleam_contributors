@@ -1,9 +1,9 @@
 import gleam/map
 import gleam/list
 import gleam/string
-import gleam/option.{None, Option, Some}
-import gleam_contributors/sponsor.{Sponsor}
-import gleam_contributors/contributor.{Contributor}
+import gleam/option.{type Option, None, Some}
+import gleam_contributors/sponsor.{type Sponsor}
+import gleam_contributors/contributor.{type Contributor}
 import gleam_contributors/markdown
 
 pub type Attributee {
