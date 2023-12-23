@@ -13,4 +13,4 @@ simplifile = "~> 0.1"
 gleam_json = "~> 0.7"
 
 [dev-dependencies]
-gleeunit = "~> 0.5"
+gleeunit = "~> 1.0"
