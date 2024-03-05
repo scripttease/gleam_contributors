@@ -1,4 +1,4 @@
-import gleam/map
+import gleam/dict
 import gleam/list
 import gleam/string
 import gleam/option.{type Option, None, Some}
@@ -30,8 +30,8 @@ pub fn deduplicate(attributees: List(Attributee)) -> List(Attributee) {
     }
     #(key, attributee)
   })
-  |> map.from_list
-  |> map.values
+  |> dict.from_list
+  |> dict.values
 }
 
 pub fn sort_by_name(attributees: List(Attributee)) -> List(Attributee) {
