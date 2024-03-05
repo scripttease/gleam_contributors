@@ -31,11 +31,13 @@ pub fn decode(json_obj: Dynamic) -> Result(Sponsor, List(DecodeError)) {
   use github <- result.try(dynamic.field("url", dynamic.string)(entity))
   use name <- result.try(
     dynamic.field("name", dynamic.string)(entity)
-    |> result.or(Ok(string.slice(
-      from: github,
-      at_index: string.length("https://github.com/"),
-      length: 1000,
-    ))),
+    |> result.or(
+      Ok(string.slice(
+        from: github,
+        at_index: string.length("https://github.com/"),
+        length: 1000,
+      )),
+    ),
   )
   use avatar <- result.try(dynamic.field("avatarUrl", dynamic.string)(entity))
   let website =

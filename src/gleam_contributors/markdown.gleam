@@ -7,15 +7,11 @@ import gleam/string
 ///
 pub fn unordered_list(contributors: List(String)) -> String {
   let string_out =
-    list.fold(
-      contributors,
-      "",
-      fn(acc, elem) {
-        acc
-        |> string.append("\n - ")
-        |> string.append(elem)
-      },
-    )
+    list.fold(contributors, "", fn(acc, elem) {
+      acc
+      |> string.append("\n - ")
+      |> string.append(elem)
+    })
   string.concat([string_out, "\n"])
 }
 

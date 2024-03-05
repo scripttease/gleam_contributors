@@ -32,7 +32,9 @@ pub fn parse_sponsor_empty_with_cursor_test() {
   "
 
   json.decode(payload, sponsor.decode_page)
-  |> should.equal(Ok(Sponsorspage(nextpage_cursor: Error(Nil), sponsor_list: [])))
+  |> should.equal(
+    Ok(Sponsorspage(nextpage_cursor: Error(Nil), sponsor_list: [])),
+  )
 }
 
 pub fn parse_sponsor_test() {
@@ -76,25 +78,26 @@ pub fn parse_sponsor_test() {
 }
   "
   json.decode(payload, sponsor.decode_page)
-  |> should.equal(Ok(Sponsorspage(
-    nextpage_cursor: Ok("Mg"),
-    sponsor_list: [
-      Sponsor(
-        name: "Chris Young",
-        avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
-        github: "https://github.com/worldofchris",
-        website: Error(Nil),
-        cents: 500,
-      ),
-      Sponsor(
-        name: "Bruno Michel",
-        github: "https://github.com/nono",
-        avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
-        website: Ok("http://blog.menfin.info/"),
-        cents: 500,
-      ),
-    ],
-  )))
+  |> should.equal(
+    Ok(
+      Sponsorspage(nextpage_cursor: Ok("Mg"), sponsor_list: [
+        Sponsor(
+          name: "Chris Young",
+          avatar: "https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4",
+          github: "https://github.com/worldofchris",
+          website: Error(Nil),
+          cents: 500,
+        ),
+        Sponsor(
+          name: "Bruno Michel",
+          github: "https://github.com/nono",
+          avatar: "https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4",
+          website: Ok("http://blog.menfin.info/"),
+          cents: 500,
+        ),
+      ]),
+    ),
+  )
 }
 
 pub fn list_sponsor_to_list_string_test() {
@@ -511,10 +514,9 @@ pub fn parse_contributors_empty_with_cursor_test() {
 }
   "
   contributor.decode_page(json)
-  |> should.equal(Ok(Contributorspage(
-    nextpage_cursor: Error(Nil),
-    contributor_list: [],
-  )))
+  |> should.equal(
+    Ok(Contributorspage(nextpage_cursor: Error(Nil), contributor_list: [])),
+  )
 }
 
 // TODO change previous to latest or current
@@ -586,31 +588,35 @@ pub fn parse_contributors_test() {
   "
 
   contributor.decode_page(json)
-  |> should.equal(Ok(Contributorspage(
-    nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
-    contributor_list: [
-      Contributor(
-        name: "Louis Pilfold",
-        github: Some("https://github.com/lpil"),
+  |> should.equal(
+    Ok(
+      Contributorspage(
+        nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
+        contributor_list: [
+          Contributor(
+            name: "Louis Pilfold",
+            github: Some("https://github.com/lpil"),
+          ),
+          Contributor(
+            name: "Tom Whatmore",
+            github: Some("https://github.com/tomwhatmore"),
+          ),
+          Contributor(
+            name: "Louis Pilfold",
+            github: Some("https://github.com/lpil"),
+          ),
+          Contributor(
+            name: "Louis Pilfold",
+            github: Some("https://github.com/lpil"),
+          ),
+          Contributor(
+            name: "Quinn Wilton",
+            github: Some("https://github.com/QuinnWilton"),
+          ),
+        ],
       ),
-      Contributor(
-        name: "Tom Whatmore",
-        github: Some("https://github.com/tomwhatmore"),
-      ),
-      Contributor(
-        name: "Louis Pilfold",
-        github: Some("https://github.com/lpil"),
-      ),
-      Contributor(
-        name: "Louis Pilfold",
-        github: Some("https://github.com/lpil"),
-      ),
-      Contributor(
-        name: "Quinn Wilton",
-        github: Some("https://github.com/QuinnWilton"),
-      ),
-    ],
-  )))
+    ),
+  )
 }
 
 pub fn parse_url_is_optional_test() {
@@ -642,10 +648,14 @@ pub fn parse_url_is_optional_test() {
   "
 
   contributor.decode_page(json)
-  |> should.equal(Ok(Contributorspage(
-    nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
-    contributor_list: [Contributor(name: "Louis Pilfold", github: None)],
-  )))
+  |> should.equal(
+    Ok(
+      Contributorspage(
+        nextpage_cursor: Ok("3cecc58691af74a1b9e1bdc7c9bd42020a7a9052 4"),
+        contributor_list: [Contributor(name: "Louis Pilfold", github: None)],
+      ),
+    ),
+  )
 }
 
 pub fn remove_duplicates_test() {

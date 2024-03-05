@@ -47,22 +47,19 @@ fn call_api_for_datetimes(
   Ok(#(from_datetime, to_datetime))
 }
 
-fn case_insensitive_sort(items: List(String)) -> List(String) {
-  let case_insensitive_string_compare = fn(a, b) {
-    string.compare(string.lowercase(a), string.lowercase(b))
-  }
-
-  list.sort(items, case_insensitive_string_compare)
-}
-
 pub fn list_sponsor_to_list_string(sponsors_list: List(Sponsor)) -> List(String) {
   sponsors_list
+  |> list.sort(fn(a, b) {
+    string.compare(
+      string.lowercase(sponsor.display_name(a)),
+      string.lowercase(sponsor.display_name(b)),
+    )
+  })
   |> list.map(fn(record: Sponsor) {
     let name = sponsor.display_name(record)
     let href = sponsor.display_link(record)
-    markdown.link(name, to: href)
+    "<a href=\"" <> href <> "\">" <> name <> "</a>"
   })
-  |> case_insensitive_sort
 }
 
 /// Filters sponsor list to people who have donated `dollars` or above
@@ -134,7 +131,10 @@ fn readme_list(token: String, filename: String) -> Result(Nil, String) {
     |> result.map_error(fn(_) { "Could not split file." }),
   )
   let str_lst_sponsors = list_sponsor_to_list_string(sponsors)
-  let output_sponsors = markdown.unordered_list(str_lst_sponsors)
+  let output_sponsors =
+    "<p align=\"center\">\n  "
+    <> string.join(str_lst_sponsors, " -\n  ")
+    <> "\n</p>"
   let gen_readme = string.concat([part_one, splitter, "\n", output_sponsors])
   io.println("Writing edited content to target file")
   write_file(filename, gen_readme)
@@ -173,11 +173,9 @@ $TO_VERSION is optional and if omitted, records will be retrieved up to the curr
 
 //Uses the uniqueness property of sets to remove duplicates from list
 pub fn remove_duplicates(sponsors_list: List(String)) -> Set(String) {
-  list.fold(
-    over: sponsors_list,
-    from: set.new(),
-    with: fn(acc, elem) { set.insert(acc, elem) },
-  )
+  list.fold(over: sponsors_list, from: set.new(), with: fn(acc, elem) {
+    set.insert(acc, elem)
+  })
 }
 
 pub fn list_contributor_to_list_string(
