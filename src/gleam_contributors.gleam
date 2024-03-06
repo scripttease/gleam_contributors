@@ -107,6 +107,7 @@ fn website_yaml(token: String, filename: String) -> Result(Nil, String) {
   io.println("Calling Sponsors API")
   use sponsors <- result.try(call_api_for_sponsors(token, option.None, []))
   sponsors
+  |> list.sort(fn(a, b) { string.compare(a.name, b.name) })
   |> yaml.sponsors
   |> write_file(filename, _)
 }
