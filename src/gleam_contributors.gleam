@@ -1,5 +1,6 @@
+import argv
+import cymbal
 import envoy
-import gleam/erlang
 import gleam/io
 import gleam/json
 import gleam/list
@@ -14,7 +15,6 @@ import gleam_contributors/markdown
 import gleam_contributors/repo.{type Repo}
 import gleam_contributors/sponsor.{type Sponsor, type Sponsorspage}
 import gleam_contributors/time
-import gleam_contributors/yaml
 import simplifile
 
 fn write_file(filename: String, content: String) -> Result(Nil, String) {
@@ -95,24 +95,26 @@ fn call_api_for_sponsors(
   }
 }
 
-pub type WebsiteTiers {
-  WebsiteTiers(
-    first: List(Sponsor),
-    second: List(Sponsor),
-    third: List(Sponsor),
-    fourth: List(Sponsor),
-  )
-}
-
 fn website_yaml(filename: String) -> Result(Nil, String) {
   use token <- result.try(token_from_env())
 
   io.println("Calling Sponsors API")
   use sponsors <- result.try(call_api_for_sponsors(token, option.None, []))
-  sponsors
-  |> list.sort(fn(a, b) { string.compare(a.name, b.name) })
-  |> yaml.sponsors
-  |> write_file(filename, _)
+  let sponsors =
+    list.sort(sponsors, fn(a, b) { string.compare(a.name, b.name) })
+  let document =
+    cymbal.array(
+      list.map(sponsors, fn(s) {
+        cymbal.block([
+          #("name", cymbal.string(sponsor.display_name(s))),
+          #("url", cymbal.string(sponsor.display_link(s))),
+          #("avatar", cymbal.string(sponsor.display_avatar(s))),
+          #("square_avatar", cymbal.bool(sponsor.square_avatar(s))),
+        ])
+      }),
+    )
+
+  write_file(filename, cymbal.encode(document))
 }
 
 fn token_from_env() -> Result(String, String) {
@@ -362,7 +364,7 @@ fn print_combined_sponsors_and_contributors(
 // List(Charlist) formed of whitespace seperated commands to stdin.
 // Top level, handles error-handling
 pub fn main() -> Nil {
-  let args = erlang.start_arguments()
+  let args = argv.load().arguments
   io.println("Erlang applications started")
 
   let result = case args {
