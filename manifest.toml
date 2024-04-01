@@ -2,6 +2,7 @@
 # You typically do not need to edit this file
 
 packages = [
+  { name = "envoy", version = "1.0.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "envoy", source = "hex", outer_checksum = "CFAACCCFC47654F7E8B75E614746ED924C65BD08B1DE21101548AC314A8B6A41" },
   { name = "gleam_erlang", version = "0.24.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_erlang", source = "hex", outer_checksum = "26BDB52E61889F56A291CB34167315780EE4AA20961917314446542C90D1C1A0" },
   { name = "gleam_http", version = "3.5.3", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleam_http", source = "hex", outer_checksum = "C2FC3322203B16F897C1818D9810F5DEFCE347F0751F3B44421E1261277A7373" },
   { name = "gleam_httpc", version = "2.1.2", build_tools = ["gleam"], requirements = ["gleam_http", "gleam_stdlib"], otp_app = "gleam_httpc", source = "hex", outer_checksum = "ACD05CA3BAC7780DF5FFAE334621FD199D1B490FAF6ECDFF74316CAA61CE88E6" },
@@ -14,6 +15,7 @@ packages = [
 ]
 
 [requirements]
+envoy = { version = ">= 1.0.1 and < 2.0.0"}
 gleam_erlang = { version = "~> 0.23" }
 gleam_http = { version = "~> 3.0" }
 gleam_httpc = { version = "~> 2.0" }

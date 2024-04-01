@@ -1,20 +1,21 @@
+import envoy
 import gleam/erlang
-import gleam/result
-import gleam/string
-import gleam/set.{type Set}
-import gleam/list
 import gleam/io
-import gleam/option.{type Option, None, Some}
 import gleam/json
-import simplifile
-import gleam_contributors/time
-import gleam_contributors/repo.{type Repo}
+import gleam/list
+import gleam/option.{type Option, None, Some}
+import gleam/result
+import gleam/set.{type Set}
+import gleam/string
+import gleam_contributors/attributee
+import gleam_contributors/contributor.{type Contributor}
 import gleam_contributors/graphql
 import gleam_contributors/markdown
-import gleam_contributors/yaml
+import gleam_contributors/repo.{type Repo}
 import gleam_contributors/sponsor.{type Sponsor, type Sponsorspage}
-import gleam_contributors/contributor.{type Contributor}
-import gleam_contributors/attributee
+import gleam_contributors/time
+import gleam_contributors/yaml
+import simplifile
 
 fn write_file(filename: String, content: String) -> Result(Nil, String) {
   simplifile.write(content, to: filename)
@@ -103,7 +104,9 @@ pub type WebsiteTiers {
   )
 }
 
-fn website_yaml(token: String, filename: String) -> Result(Nil, String) {
+fn website_yaml(filename: String) -> Result(Nil, String) {
+  use token <- result.try(token_from_env())
+
   io.println("Calling Sponsors API")
   use sponsors <- result.try(call_api_for_sponsors(token, option.None, []))
   sponsors
@@ -112,7 +115,16 @@ fn website_yaml(token: String, filename: String) -> Result(Nil, String) {
   |> write_file(filename, _)
 }
 
-fn readme_list(token: String, filename: String) -> Result(Nil, String) {
+fn token_from_env() -> Result(String, String) {
+  case envoy.get("GITHUB_TOKEN") {
+    Ok(token) -> Ok(token)
+    Error(Nil) -> Error("GITHUB_TOKEN not set")
+  }
+}
+
+fn readme_list(filename: String) -> Result(Nil, String) {
+  use token <- result.try(token_from_env())
+
   io.println("Calling Sponsors API")
 
   // Get sponsors over $10 for generated readme section
@@ -142,30 +154,21 @@ fn readme_list(token: String, filename: String) -> Result(Nil, String) {
 }
 
 // Parse args from STDIN
-fn parse_args(args: List(String)) -> Result(#(String, String, String), String) {
+fn parse_args(
+  token: String,
+  args: List(String),
+) -> Result(#(String, String), String) {
   case args {
-    [token, from_version, to_version] -> {
+    [from_version, to_version] -> {
       // From and to dates from version numbers
-      use datetimes <- result.try(call_api_for_datetimes(
-        token,
-        from_version,
-        Some(to_version),
-      ))
-      let #(from, to) = datetimes
-      Ok(#(token, from, to))
+      call_api_for_datetimes(token, from_version, Some(to_version))
     }
-    [token, from_version] -> {
-      use datetimes <- result.try(call_api_for_datetimes(
-        token,
-        from_version,
-        None,
-      ))
-      let #(from, to) = datetimes
-      Ok(#(token, from, to))
+    [from_version] -> {
+      call_api_for_datetimes(token, from_version, None)
     }
     _ ->
       Error(
-        "Usage: _buildfilename $TOKEN $FROM_VERSION $TO_VESRION
+        "Usage: _buildfilename $FROM_VERSION $TO_VESRION
 Version should be in format `v0.3.0`
 $TO_VERSION is optional and if omitted, records will be retrieved up to the current datetime.",
       )
@@ -326,10 +329,12 @@ fn call_api_for_all_contributors(token, from, to) {
 fn print_combined_sponsors_and_contributors(
   args: List(String),
 ) -> Result(Nil, String) {
+  use token <- result.try(token_from_env())
+
   // Parses command line arguments
   // Call API for sponsors and contribtors
   // Join the sponsors and contributors together as attributees
-  use #(token, from, to) <- result.try(parse_args(args))
+  use #(from, to) <- result.try(parse_args(token, args))
 
   use sponsors <- result.try(call_api_for_sponsors(token, option.None, []))
   use contributors <- result.try(call_api_for_all_contributors(token, from, to))
@@ -361,8 +366,8 @@ pub fn main() -> Nil {
   io.println("Erlang applications started")
 
   let result = case args {
-    ["readme-list", token, filename] -> readme_list(token, filename)
-    ["website-yaml", token, filename] -> website_yaml(token, filename)
+    ["readme-list", filename] -> readme_list(filename)
+    ["website-yaml", filename] -> website_yaml(filename)
     _other -> print_combined_sponsors_and_contributors(args)
   }
 

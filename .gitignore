@@ -22,3 +22,4 @@ rebar3.crashdump
 scribs.*
 secrets.md
 build
+secrets.env
