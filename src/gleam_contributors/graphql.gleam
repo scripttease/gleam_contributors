@@ -1,10 +1,10 @@
-import gleam/option.{type Option}
-import gleam/string
-import gleam/io
-import gleam/httpc
 import gleam/http.{Post}
 import gleam/http/request
+import gleam/httpc
+import gleam/io
 import gleam/json
+import gleam/option.{type Option}
+import gleam/string
 
 /// Calls the Github API v4 (GraphQL)
 pub fn call_api(token: String, query: String) -> Result(String, String) {

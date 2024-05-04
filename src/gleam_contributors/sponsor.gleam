@@ -107,6 +107,8 @@ pub fn display_link(sponsor: Sponsor) -> String {
     "https://github.com/team-alembic" -> website
     "https://github.com/skunkwerks" -> website
     "https://github.com/varnerac" -> website
+    // TODO: fix this. It is an empty string if the sponsor is from liberapay
+    "" -> website
     _ -> sponsor.github
   }
 }
