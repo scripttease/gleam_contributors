@@ -1,7 +1,7 @@
-import gleam/result
-import gleam/option.{type Option}
 import gleam/dynamic.{type DecodeError, type Dynamic}
 import gleam/json
+import gleam/option.{type Option}
+import gleam/result
 
 pub type Contributor {
   Contributor(name: String, github: Option(String))

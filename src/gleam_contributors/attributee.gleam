@@ -1,10 +1,10 @@
 import gleam/dict
 import gleam/list
-import gleam/string
 import gleam/option.{type Option, None, Some}
-import gleam_contributors/sponsor.{type Sponsor}
+import gleam/string
 import gleam_contributors/contributor.{type Contributor}
 import gleam_contributors/markdown
+import gleam_contributors/sponsor.{type Sponsor}
 
 pub type Attributee {
   Attributee(name: String, github: Option(String))

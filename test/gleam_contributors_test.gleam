@@ -1,11 +1,11 @@
-import gleam_contributors
-import gleam_contributors/sponsor.{Sponsor, Sponsorspage}
-import gleam_contributors/contributor.{Contributor, Contributorspage}
-import gleam_contributors/graphql
 import gleam/json
-import gleam_contributors/time
 import gleam/option.{None, Some}
 import gleam/set
+import gleam_contributors
+import gleam_contributors/contributor.{Contributor, Contributorspage}
+import gleam_contributors/graphql
+import gleam_contributors/sponsor.{Sponsor, Sponsorspage}
+import gleam_contributors/time
 import gleeunit
 import gleeunit/should
 

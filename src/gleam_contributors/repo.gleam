@@ -1,5 +1,5 @@
-import gleam/result
 import gleam/dynamic.{type DecodeError, type Dynamic}
+import gleam/result
 
 pub type Repo {
   Repo(org: String, name: String)
