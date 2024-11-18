@@ -86,6 +86,7 @@ pub fn construct_contributor_query(
             author {
               name
               user {
+                name
                 login
                 url
               }

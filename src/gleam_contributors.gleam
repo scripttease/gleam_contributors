@@ -342,10 +342,7 @@ fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
     |> result.map_error(string.inspect)
   }
 
-  use orgs <- result.try(list.try_map(
-    ["gleam-lang", "gleam-experiments"],
-    get_repos,
-  ))
+  use orgs <- result.try(list.try_map(["gleam-lang"], get_repos))
   orgs
   |> list.fold([], list.append)
   |> Ok

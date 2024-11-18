@@ -19,21 +19,20 @@ pub type Contributorspage {
 // parse_contributors, but it is the contributor section only. To make the parse
 // function more readable
 pub fn decode(json_obj: Dynamic) -> Result(Contributor, List(DecodeError)) {
-  json_obj
-  |> dynamic.decode2(
-    Contributor,
-    dynamic.field("author", dynamic.field("name", dynamic.string)),
-    dynamic.field(
-      "author",
-      dynamic.field(
-        "user",
-        dynamic.any([
-          dynamic.field("url", dynamic.optional(dynamic.string)),
-          fn(_) { Ok(option.None) },
-        ]),
-      ),
-    ),
-  )
+  let decoder =
+    dynamic.decode2(
+      Contributor,
+      dynamic.any([
+        dynamic.field("name", dynamic.string),
+        dynamic.field("login", dynamic.string),
+      ]),
+      dynamic.any([
+        dynamic.field("url", dynamic.optional(dynamic.string)),
+        fn(_) { Ok(option.None) },
+      ]),
+    )
+  let decoder = dynamic.field("author", dynamic.field("user", decoder))
+  decoder(json_obj)
 }
 
 /// Converts response json into Gleam type. Represents one page of contributors
