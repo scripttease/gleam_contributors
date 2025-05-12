@@ -13,7 +13,6 @@ simplifile = "~> 0.1"
 gleam_json = "~> 0.7"
 envoy = ">= 1.0.1 and < 2.0.0"
 argv = ">= 1.0.2 and < 2.0.0"
-cymbal = ">= 1.0.0 and < 2.0.0"
 gliberapay = ">= 1.0.1 and < 2.0.0"
 
 [dev-dependencies]

@@ -1,5 +1,4 @@
 import argv
-import cymbal
 import envoy
 import gleam/httpc
 import gleam/io
@@ -132,28 +131,6 @@ fn get_github_sponsors(
     }
     _ -> Ok(sponsor_list)
   }
-}
-
-fn website_yaml(filename: String) -> Result(Nil, String) {
-  use token <- result.try(token_from_env())
-
-  io.println("Calling Sponsors API")
-  use sponsors <- result.try(get_sponsors(token))
-  let sponsors =
-    list.sort(sponsors, fn(a, b) { string.compare(a.name, b.name) })
-  let document =
-    cymbal.array(
-      list.map(sponsors, fn(s) {
-        cymbal.block([
-          #("name", cymbal.string(sponsor.display_name(s))),
-          #("url", cymbal.string(sponsor.display_link(s))),
-          #("avatar", cymbal.string(sponsor.display_avatar(s))),
-          #("square_avatar", cymbal.bool(sponsor.square_avatar(s))),
-        ])
-      }),
-    )
-
-  write_file(filename, cymbal.encode(document))
 }
 
 fn token_from_env() -> Result(String, String) {
@@ -405,7 +382,6 @@ pub fn main() -> Nil {
 
   let result = case args {
     ["readme-list", filename] -> readme_list(filename)
-    ["website-yaml", filename] -> website_yaml(filename)
     _other -> print_combined_sponsors_and_contributors(args)
   }
 
