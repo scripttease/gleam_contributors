@@ -13,12 +13,6 @@ pub type Contributorspage {
   )
 }
 
-// {
-//   \"author\": {
-//     \"name\": \"Louis Pilfold\",
-//     \"user\": null
-//   }
-// }
 pub fn decoder() -> Decoder(Contributor) {
   let decoder = {
     use name <- decode.then(
