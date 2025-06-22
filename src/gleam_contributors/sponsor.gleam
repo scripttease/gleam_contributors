@@ -1,5 +1,5 @@
-import gleam/dynamic.{type DecodeError, type Dynamic}
-import gleam/result
+import gleam/dynamic/decode.{type Decoder}
+import gleam/option
 import gleam/string
 
 pub type Sponsor {
@@ -7,7 +7,7 @@ pub type Sponsor {
     name: String,
     github: String,
     avatar: String,
-    website: Result(String, Nil),
+    website: option.Option(String),
     cents: Int,
   )
 }
@@ -18,36 +18,34 @@ pub type Sponsor {
 // as a starting point for the next query.
 pub type Sponsorspage {
   Sponsorspage(
-    nextpage_cursor: Result(String, Nil),
+    nextpage_cursor: option.Option(String),
     sponsor_list: List(Sponsor),
   )
 }
 
 /// Decodes sponsor section of the response JSON (List of maps)
 ///
-pub fn decode(json_obj: Dynamic) -> Result(Sponsor, List(DecodeError)) {
-  use entity <- result.try(dynamic.field("sponsorEntity", Ok)(json_obj))
-
-  use github <- result.try(dynamic.field("url", dynamic.string)(entity))
-  use name <- result.try(
-    dynamic.field("name", dynamic.string)(entity)
-    |> result.or(
-      Ok(string.slice(
+pub fn decoder() -> Decoder(Sponsor) {
+  use cents <- decode.subfield(["tier", "monthlyPriceInCents"], decode.int)
+  use avatar <- decode.subfield(["sponsorEntity", "avatarUrl"], decode.string)
+  use github <- decode.subfield(["sponsorEntity", "url"], decode.string)
+  use website <- decode.then(
+    decode.one_of(
+      decode.at(["sponsorEntity", "websiteUrl"], decode.optional(decode.string)),
+      [decode.success(option.None)],
+    ),
+  )
+  use name <- decode.then(
+    decode.one_of(decode.at(["sponsorEntity", "name"], decode.string), [
+      decode.success(string.slice(
         from: github,
         at_index: string.length("https://github.com/"),
         length: 1000,
       )),
-    ),
+    ]),
   )
-  use avatar <- result.try(dynamic.field("avatarUrl", dynamic.string)(entity))
-  let website =
-    dynamic.field("websiteUrl", dynamic.string)(entity)
-    |> result.map_error(fn(_) { Nil })
-  use cents <- result.try(dynamic.field(
-    "tier",
-    dynamic.field("monthlyPriceInCents", dynamic.int),
-  )(json_obj))
-  Ok(Sponsor(
+
+  decode.success(Sponsor(
     name: name,
     github: github,
     avatar: avatar,
@@ -57,23 +55,16 @@ pub fn decode(json_obj: Dynamic) -> Result(Sponsor, List(DecodeError)) {
 }
 
 // Takes response json string and returns a Sponsorspage
-pub fn decode_page(sponsors: Dynamic) -> Result(Sponsorspage, List(DecodeError)) {
-  // TODO error message string?
-  // only returns if result(Ok(_))
-  // only called if there is no nextpage, ie result -> Error(Nil)
-  use data <- result.try(dynamic.field("data", Ok)(sponsors))
-  use user <- result.try(dynamic.field("user", Ok)(data))
-  use spons <- result.try(dynamic.field("sponsorshipsAsMaintainer", Ok)(user))
-  use page <- result.try(dynamic.field("pageInfo", Ok)(spons))
-  use nextpage <- result.try(dynamic.field("hasNextPage", dynamic.bool)(page))
-  let cursor = case nextpage {
-    False -> Error(Nil)
-    True ->
-      dynamic.field("endCursor", dynamic.string)(page)
-      |> result.map_error(fn(_) { Nil })
+pub fn page_decoder() -> Decoder(Sponsorspage) {
+  let decoder = {
+    use sponsor_list <- decode.field("nodes", decode.list(decoder()))
+    use nextpage_cursor <- decode.subfield(
+      ["pageInfo", "endCursor"],
+      decode.optional(decode.string),
+    )
+    decode.success(Sponsorspage(nextpage_cursor:, sponsor_list:))
   }
-  use sponsors <- result.try(dynamic.field("nodes", dynamic.list(decode))(spons))
-  Ok(Sponsorspage(nextpage_cursor: cursor, sponsor_list: sponsors))
+  decode.at(["data", "user", "sponsorshipsAsMaintainer"], decoder)
 }
 
 // Some sponsors wish to display their username differently, so override it for
@@ -101,7 +92,7 @@ pub fn square_avatar(sponsor: Sponsor) -> Bool {
 // Some sponsors wish to display their link differently, so override it for
 // these people.
 pub fn display_link(sponsor: Sponsor) -> String {
-  let website = result.unwrap(sponsor.website, sponsor.github)
+  let website = option.unwrap(sponsor.website, sponsor.github)
   case sponsor.github {
     "https://github.com/ktec" -> "https://github.com/cleverbunny"
     "https://github.com/team-alembic" -> website

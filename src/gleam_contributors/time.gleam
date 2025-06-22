@@ -1,4 +1,4 @@
-import gleam/dynamic.{type DecodeError, type Dynamic}
+import gleam/dynamic/decode.{type Decoder}
 
 /// Erlang library for datetime
 @external(erlang, "calendar", "universal_time")
@@ -8,24 +8,9 @@ pub fn now() -> #(Int, Int, Int)
 pub fn iso_format(date: #(Int, Int, Int)) -> String
 
 // Converts response json to datetime string.
-pub fn decode_iso_datetime(
-  payload: Dynamic,
-) -> Result(String, List(DecodeError)) {
-  payload
-  |> dynamic.field(
-    "data",
-    dynamic.field(
-      "repository",
-      dynamic.field(
-        "release",
-        dynamic.field(
-          "tag",
-          dynamic.field(
-            "target",
-            dynamic.field("committedDate", dynamic.string),
-          ),
-        ),
-      ),
-    ),
+pub fn decode_iso_datetime() -> Decoder(String) {
+  decode.at(
+    ["data", "repository", "release", "tag", "target", "committedDate"],
+    decode.string,
   )
 }

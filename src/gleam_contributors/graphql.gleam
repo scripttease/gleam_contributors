@@ -1,7 +1,6 @@
 import gleam/http.{Post}
 import gleam/http/request
 import gleam/httpc
-import gleam/io
 import gleam/json
 import gleam/option.{type Option}
 import gleam/string
@@ -23,8 +22,9 @@ pub fn call_api(token: String, query: String) -> Result(String, String) {
   let response = case result {
     Ok(response) -> Ok(response.body)
     Error(e) -> {
-      io.debug(e)
-      Error("There was an error during the POST request :(\n")
+      Error(
+        "There was an error during the POST request :(\n" <> string.inspect(e),
+      )
     }
   }
   response

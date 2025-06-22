@@ -33,7 +33,7 @@ fn call_api_for_datetimes(
     Some(to_version) -> {
       let query_to: String = graphql.construct_release_query(to_version)
       use response_json: String <- result.try(graphql.call_api(token, query_to))
-      json.decode(response_json, time.decode_iso_datetime)
+      json.parse(response_json, time.decode_iso_datetime())
       |> result.map_error(string.inspect)
     }
     None -> Ok(time.iso_format(time.now()))
@@ -43,7 +43,7 @@ fn call_api_for_datetimes(
 
   use response_json <- result.try(graphql.call_api(token, query_from))
   use from_datetime <- result.try(
-    json.decode(response_json, time.decode_iso_datetime)
+    json.parse(response_json, time.decode_iso_datetime())
     |> result.map_error(string.inspect),
   )
   Ok(#(from_datetime, to_datetime))
@@ -73,7 +73,7 @@ pub fn filter_sponsors(lst: List(Sponsor), dollars: Int) -> List(Sponsor) {
 fn get_sponsors(token: String) -> Result(List(Sponsor), String) {
   use github_sponsors <- result.try(get_github_sponsors(token, option.None, []))
   use liberapay_sponsors <- result.try(get_liberapay_sponsors())
-  list.concat([github_sponsors, liberapay_sponsors])
+  list.flatten([github_sponsors, liberapay_sponsors])
   |> Ok
 }
 
@@ -99,7 +99,7 @@ fn get_liberapay_sponsors() -> Result(List(Sponsor), String) {
       name: option.unwrap(p.patron_public_name, p.patron_username),
       github: "",
       avatar: p.patron_avatar_url,
-      website: Ok("https://liberapay.com/" <> p.patron_username <> "/"),
+      website: option.Some("https://liberapay.com/" <> p.patron_username <> "/"),
       // TODO: remove cents, we don't use it any more
       cents: 0,
     )
@@ -118,14 +118,14 @@ fn get_github_sponsors(
   // and is therefore passed in as an arg.
   use response_json: String <- result.try(graphql.call_api(token, query))
   use sponsorpage: Sponsorspage <- result.try(
-    json.decode(response_json, sponsor.decode_page)
+    json.parse(response_json, sponsor.page_decoder())
     |> result.map_error(string.inspect),
   )
 
   let sponsor_list: List(Sponsor) =
     list.append(sponsor_list, sponsorpage.sponsor_list)
   case sponsorpage.nextpage_cursor {
-    Ok(cursor) -> {
+    Some(cursor) -> {
       let cursor_opt = option.Some(cursor)
       get_github_sponsors(token, cursor_opt, sponsor_list)
     }
@@ -255,7 +255,7 @@ fn request_and_parse_contributors(
 
   use response_json <- result.try(graphql.call_api(token, query))
   use contributorpage <- result.try(
-    contributor.decode_page(response_json)
+    json.parse(response_json, contributor.page_decoder())
     |> result.map_error(string.inspect),
   )
   Ok(contributorpage)
@@ -293,7 +293,7 @@ fn call_api_for_contributors(
   let contributor_list =
     list.append(contributor_list, contributorpage.contributor_list)
   case contributorpage.nextpage_cursor {
-    Ok(cursor) -> {
+    Some(cursor) -> {
       let cursor_opt = option.Some(cursor)
       call_api_for_contributors(
         token,
@@ -315,7 +315,7 @@ fn call_api_for_repos(token: String) -> Result(List(Repo), String) {
     let query = graphql.construct_repo_query(org)
     use resp <- result.try(graphql.call_api(token, query))
     resp
-    |> json.decode(repo.decode_organisation_repos(_, org))
+    |> json.parse(repo.decode_organisation_repos(org))
     |> result.map_error(string.inspect)
   }
 
