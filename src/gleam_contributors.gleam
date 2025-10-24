@@ -64,16 +64,17 @@ pub fn list_sponsor_to_list_string(sponsors_list: List(Sponsor)) -> List(String)
   })
 }
 
-/// Filters sponsor list to people who have donated `dollars` or above
-pub fn filter_sponsors(lst: List(Sponsor), dollars: Int) -> List(Sponsor) {
-  let cents = dollars * 100
-  list.filter(lst, fn(sponsor: Sponsor) { sponsor.cents >= cents })
-}
-
 fn get_sponsors(token: String) -> Result(List(Sponsor), String) {
-  use github_sponsors <- result.try(get_github_sponsors(token, option.None, []))
+  use lpil_sponsors <- result.try(
+    get_github_sponsors("lpil", token, option.None, []),
+  )
+  use gleam_sponsors <- result.try(
+    get_github_sponsors("gleam-lang", token, option.None, []),
+  )
   use liberapay_sponsors <- result.try(get_liberapay_sponsors())
-  list.flatten([github_sponsors, liberapay_sponsors])
+  [lpil_sponsors, gleam_sponsors, liberapay_sponsors]
+  |> list.flatten
+  |> list.unique
   |> Ok
 }
 
@@ -98,21 +99,19 @@ fn get_liberapay_sponsors() -> Result(List(Sponsor), String) {
     Sponsor(
       name: option.unwrap(p.patron_public_name, p.patron_username),
       github: "",
-      avatar: p.patron_avatar_url,
       website: option.Some("https://liberapay.com/" <> p.patron_username <> "/"),
-      // TODO: remove cents, we don't use it any more
-      cents: 0,
     )
   })
   |> Ok
 }
 
 fn get_github_sponsors(
+  sponsee: String,
   token: String,
   cursor: Option(String),
   sponsor_list: List(Sponsor),
 ) -> Result(List(Sponsor), String) {
-  let query = graphql.construct_sponsor_query(cursor, option.None)
+  let query = graphql.construct_sponsor_query(sponsee, cursor, option.None)
 
   // The sponsor_list acts as an accumluator on the recursive call of the fn,
   // and is therefore passed in as an arg.
@@ -127,7 +126,7 @@ fn get_github_sponsors(
   case sponsorpage.nextpage_cursor {
     Some(cursor) -> {
       let cursor_opt = option.Some(cursor)
-      get_github_sponsors(token, cursor_opt, sponsor_list)
+      get_github_sponsors(sponsee, token, cursor_opt, sponsor_list)
     }
     _ -> Ok(sponsor_list)
   }

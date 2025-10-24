@@ -127,54 +127,38 @@ pub fn construct_release_query(version: String) -> String {
 // Concatenates optional query params into sponsor query
 // Creates query that will return all sponsors of 'lpil'
 pub fn construct_sponsor_query(
+  sponsee: String,
   cursor: Option(String),
   num_results: Option(String),
 ) -> String {
-  let use_cursor = case cursor {
+  let cursor = case cursor {
     option.Some(cursor) -> string.concat(["\"", cursor, "\""])
     _ -> "null"
   }
 
-  let use_num_results = case num_results {
+  let count = case num_results {
     option.Some(num_results) -> num_results
     _ -> "100"
   }
 
-  string.concat([
-    "{
-  user(login: \"lpil\") {
-    sponsorshipsAsMaintainer(after: ",
-    use_cursor,
-    ", first: ",
-    use_num_results,
-    ") {
-      pageInfo {
-        hasNextPage
-        endCursor
-      }
-      nodes {
-        sponsorEntity {
-          ... on User {
-            name
-            url
-            avatarUrl
-            websiteUrl
+  "query {
+    repositoryOwner(login: \"" <> sponsee <> "\") {
+      ... on Sponsorable {
+        sponsorshipsAsMaintainer(activeOnly: true, after: " <> cursor <> ", first: " <> count <> ") {
+          pageInfo {
+            hasNextPage
+            endCursor
           }
-          ... on Organization {
-            name
-            url
-            avatarUrl
-            websiteUrl
+          nodes {
+            sponsorEntity {
+              ... on User { login name url websiteUrl }
+              ... on Organization { login name url websiteUrl }
+            }
           }
-        }
-        tier {
-          monthlyPriceInCents
         }
       }
     }
-  }
-}",
-  ])
+  }"
 }
 
 // Query for getting all of the repos

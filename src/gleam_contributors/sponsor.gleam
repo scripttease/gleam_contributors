@@ -1,15 +1,8 @@
 import gleam/dynamic/decode.{type Decoder}
 import gleam/option
-import gleam/string
 
 pub type Sponsor {
-  Sponsor(
-    name: String,
-    github: String,
-    avatar: String,
-    website: option.Option(String),
-    cents: Int,
-  )
+  Sponsor(name: String, github: String, website: option.Option(String))
 }
 
 // Type to interrogate a single page response from the API and determine if
@@ -26,8 +19,6 @@ pub type Sponsorspage {
 /// Decodes sponsor section of the response JSON (List of maps)
 ///
 pub fn decoder() -> Decoder(Sponsor) {
-  use cents <- decode.subfield(["tier", "monthlyPriceInCents"], decode.int)
-  use avatar <- decode.subfield(["sponsorEntity", "avatarUrl"], decode.string)
   use github <- decode.subfield(["sponsorEntity", "url"], decode.string)
   use website <- decode.then(
     decode.one_of(
@@ -37,21 +28,11 @@ pub fn decoder() -> Decoder(Sponsor) {
   )
   use name <- decode.then(
     decode.one_of(decode.at(["sponsorEntity", "name"], decode.string), [
-      decode.success(string.slice(
-        from: github,
-        at_index: string.length("https://github.com/"),
-        length: 1000,
-      )),
+      decode.at(["sponsorEntity", "login"], decode.string),
     ]),
   )
 
-  decode.success(Sponsor(
-    name: name,
-    github: github,
-    avatar: avatar,
-    website: website,
-    cents: cents,
-  ))
+  decode.success(Sponsor(name: name, github: github, website: website))
 }
 
 // Takes response json string and returns a Sponsorspage
@@ -64,7 +45,7 @@ pub fn page_decoder() -> Decoder(Sponsorspage) {
     )
     decode.success(Sponsorspage(nextpage_cursor:, sponsor_list:))
   }
-  decode.at(["data", "user", "sponsorshipsAsMaintainer"], decoder)
+  decode.at(["data", "repositoryOwner", "sponsorshipsAsMaintainer"], decoder)
 }
 
 // Some sponsors wish to display their username differently, so override it for
@@ -101,25 +82,5 @@ pub fn display_link(sponsor: Sponsor) -> String {
     // TODO: fix this. It is an empty string if the sponsor is from liberapay
     "" -> website
     _ -> sponsor.github
-  }
-}
-
-// Some sponsors wish to display their avatar differently, so override it for
-// these people.
-pub fn display_avatar(sponsor: Sponsor) -> String {
-  case sponsor.github {
-    "https://github.com/varnerac" ->
-      "https://gleam.run/images/sponsors/nine-fx.png"
-    _ -> sponsor.avatar
-  }
-}
-
-pub fn tier(sponsor: Sponsor) -> Int {
-  case sponsor.cents / 100 {
-    dollars if dollars >= 1000 -> 5
-    dollars if dollars >= 500 -> 4
-    dollars if dollars >= 100 -> 3
-    dollars if dollars >= 20 -> 2
-    _otherwise -> 1
   }
 }
