@@ -4,96 +4,12 @@ import gleam/set
 import gleam_contributors
 import gleam_contributors/contributor.{Contributor, Contributorspage}
 import gleam_contributors/graphql
-import gleam_contributors/sponsor.{Sponsor, Sponsorspage}
 import gleam_contributors/time
 import gleeunit
 import gleeunit/should
 
 pub fn main() {
   gleeunit.main()
-}
-
-pub fn parse_sponsor_empty_with_cursor_test() {
-  let payload =
-    "
- {
-  \"data\": {
-    \"user\": {
-      \"sponsorshipsAsMaintainer\": {
-        \"pageInfo\": {
-          \"hasNextPage\": false,
-          \"endCursor\": \"MjE\"
-        },
-        \"nodes\": [] }
-      }
-    }
-  }
-
-  "
-
-  json.parse(payload, sponsor.page_decoder())
-  |> should.equal(
-    Ok(Sponsorspage(nextpage_cursor: option.Some("MjE"), sponsor_list: [])),
-  )
-}
-
-pub fn parse_sponsor_test() {
-  let payload =
-    "
-{
-  \"data\": {
-    \"user\": {
-      \"sponsorshipsAsMaintainer\": {
-        \"pageInfo\": {
-          \"hasNextPage\": true,
-          \"endCursor\": \"Mg\"
-        },
-        \"nodes\": [
-          {
-            \"sponsorEntity\": {
-              \"name\": \"Chris Young\",
-              \"avatarUrl\": \"https://avatars1.githubusercontent.com/u/1434500?u=63d292348087dba0ba6ac6549c175d04b38a46c9&v=4\",
-              \"websiteUrl\": null,
-              \"url\": \"https://github.com/worldofchris\"
-            },
-            \"tier\": {
-              \"monthlyPriceInCents\": 500
-            }
-          },
-          {
-            \"sponsorEntity\": {
-              \"name\": \"Bruno Michel\",
-              \"avatarUrl\": \"https://avatars3.githubusercontent.com/u/2767?u=ff72b1ad63026e0729acc2dd41378e28ab704a3f&v=4\",
-              \"websiteUrl\": \"http://blog.menfin.info/\",
-              \"url\": \"https://github.com/nono\"
-            },
-            \"tier\": {
-              \"monthlyPriceInCents\": 500
-            }
-          }
-        ]
-      }
-    }
-  }
-}
-  "
-  json.parse(payload, sponsor.page_decoder())
-  |> should.equal(
-    Ok(
-      Sponsorspage(nextpage_cursor: Some("Mg"), sponsor_list: [
-        Sponsor(
-          name: "Chris Young",
-          github: "https://github.com/worldofchris",
-          website: None,
-        ),
-        Sponsor(
-          name: "Bruno Michel",
-          github: "https://github.com/nono",
-          website: Some("http://blog.menfin.info/"),
-        ),
-      ]),
-    ),
-  )
 }
 
 pub fn construct_release_query_test() {

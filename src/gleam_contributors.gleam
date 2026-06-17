@@ -49,7 +49,9 @@ fn call_api_for_datetimes(
   Ok(#(from_datetime, to_datetime))
 }
 
-pub fn list_sponsor_to_list_string(sponsors_list: List(Sponsor)) -> List(String) {
+pub fn list_sponsor_to_list_string(
+  sponsors_list: List(Sponsor),
+) -> List(String) {
   sponsors_list
   |> list.sort(fn(a, b) {
     string.compare(
@@ -211,7 +213,6 @@ pub fn list_contributor_to_list_string(
       }
     })
 
-  // TODO: can the filter and sort be handled later or is here best?
   let case_insensitive_string_compare = fn(a, b) {
     string.compare(string.lowercase(a), string.lowercase(b))
   }
@@ -220,16 +221,6 @@ pub fn list_contributor_to_list_string(
 
   remove_duplicates(sorted)
   |> set.to_list
-}
-
-pub fn filter_creator_from_contributors(
-  contributor: List(Contributor),
-) -> List(Contributor) {
-  let isnt_louis = fn(contributor: Contributor) {
-    contributor.github != Some("https://github.com/lpil")
-  }
-
-  list.filter(contributor, keeping: isnt_louis)
 }
 
 fn request_and_parse_contributors(
@@ -355,7 +346,13 @@ fn print_combined_sponsors_and_contributors(
   let contributors =
     contributors
     |> list.flatten
-    |> filter_creator_from_contributors
+    |> list.filter(keeping: fn(contributor: Contributor) {
+      case contributor.github {
+        Some("https://github.com/lpil")
+        | Some("https://github.com/dependabot[bot]") -> False
+        _ -> True
+      }
+    })
     |> list.map(attributee.from_contributor)
   let sponsors = list.map(sponsors, attributee.from_sponsor)
 
